@@ -1,58 +1,36 @@
-# 國門守衛 GeoGuard GeoGuard（交接文件，給下一個 AI / 工程師）
-> **v2.0.0 改名**：本專案已從 `geoguard`／「國門守衛 GeoGuard」改名為 `geoguard`／「國門守衛 GeoGuard」。下文歷史段落中的舊名皆指同一套東西。
+# 國門守衛 GeoGuard（luci-app-geoguard）
 
-> 第一句先讀這份。有問題先看「已知地雷」，不要重踩。
+OpenWrt LuCI App：勾選國家＋自訂白名單 → 從雙訂閱源抓取 IP 地理定位 CIDR → 合併成 firewall4 ipset 集合，另含登入防護（LuCI／SSH 爆破封鎖）與 DDNS 免封名單。IPv4 only，正體中文／English 雙語。
 
-## 一句話
-OpenWrt LuCI App：勾選國家＋自訂白名單 IP → 從雙訂閱源抓 CIDR → 合併成 nft 集合檔 → firewall4 的 ipset 區段引用，全中文介面。
+## 功能
 
-## 線上位置（家裡實機，2026-09-11 驗證過）
-- 分享器：`root@192.168.1.1:2222`（從 PVE `root@192.168.1.250` 用 key 跳，Windows 直連 key 已失效）
-- LuCI：`http://192.168.1.1` → 網路 → GeoGuard；防火牆 → IP 集合
-- PVE 快照：`pre-2512`、`post-country-v5`（出事回滾用）
+- **IPs 設定**：217 國家勾選、雙訂閱源（主／備自動切換）、白名單（單 IP／CIDR／A-B 範圍）、每日／每週自動更新
+- **登入防護**：5 分鐘內失敗 N 次即封鎖 2 小時（網頁＋SSH 分開計數），全擋被封 IP 的 WAN 流向，內網永不封鎖
+- **DDNS 免封**：動態域名自動追 IP，只保防護免封、不動 IP 集合
+- 本包只生產集合、不動防火牆規則；掛集合到規則上一行設定即可（頁面有手把手說明）
 
-## 檔案地圖（本目錄 `luci-app-geoguard/root/` 原樣對應分享器路徑）
-| 分享器路徑 | 來源 | 說明 |
-|---|---|---|
-| `/www/.../view/geoguard.js` | 本包 | LuCI 前端（設定/記錄雙籤） |
-| `/usr/bin/geoguard-fetch` | 本包 | 只抓各國檔（主→備自動切換） |
-| `/usr/bin/geoguard-update` | 本包 | 抓取＋合併＋同步 ipset 區段＋刷新 live set |
-| `/usr/bin/geoguard-cron` | 本包 | 依 UCI 排程寫 crontab |
-| `/usr/bin/geoguard-status` | 本包 | 記錄頁的狀態輸出 |
-| `/etc/config/geoguard` | 本包（conffile） | 全部設定 |
-| `/etc/luci-uploads/cc-en.txt` | 本包 | 國碼→英文對照（註解用） |
-| `/usr/share/luci/menu.d/*.json`、`/usr/share/rpcd/acl.d/*.json` | 本包 | 選單＋權限 |
-| `/etc/uci-defaults/40-*` | 本包 | 初裝跑一次（只排 cron，不抓檔） |
-| `/etc/luci-uploads/*.cidr` | 執行期產生 | 各國檔＋合併檔（tw.cidr、allowed-IPList.cidr…） |
-| `/root/geoguard-ban.sh`、`/root/geoguard-ban-loop.sh` | **不在本包** | LuCI 防爆（另一專案，勿動） |
-| `/etc/nftables.d/10-luci-guard.nft` | **不在本包** | ban 用的鏈（另一專案，勿動） |
+## 安裝
 
-## 資料流
-勾選國家（UCI selected）→ fetch（主 ipdeny→備 ipverse）→ `/etc/luci-uploads/<cc>.cidr`
-＋白名單（單IP補/32、CIDR、A-B 範圍展開）→ 合併 `<setname>.cidr`＋`<white>.cidr`
-→ uci ipset 區段（loadfile 指向檔＋英文註解）→ flush＋重填 live set。
-**fw4 reload 不重讀 loadfile**，所以更新腳本一律手動 flush＋add（fail-closed 空窗毫秒級）。
+- OpenWrt 24.x（opkg）：`opkg install luci-app-geoguard_*_all.ipk`
+- OpenWrt 25.x（apk）：`apk add luci-app-geoguard_*_all.apk`（另有 `luci-i18n-geoguard-en`、`luci-i18n-geoguard-zh-tw` 語系包）
+- 預編包見 GitHub Releases；或用 SDK：`make package/luci-app-geoguard/compile`
+- 裝完到 網路 → 國門守衛 GeoGuard 按一次「立即更新並合併」即活
 
-## 驗證清單（改完必跑）
-1. `node --check`＋`tools/luci-harness.js`（在 `2329225-OpenWrtX86-HOME/`，沿用）
-2. `scp` 上傳＋`sha256sum` 來回對（`cat \| ssh` 管線會壓爛中文，**一律用 scp**）
-3. 本機 `.sh` 先 `sh -n`，且全檔零 CR（`grep -c $'\r'` 必須 0，PowerShell 會偷塞 CR）
-4. 線上跑一次更新，看 `/var/log` 的 geoguard 行＋`nft list set` 數量
-5. UI 改動：headless Chrome（`tools/luci-verify.js`，帳密問使用者拿）截圖親眼看
+## 佈署自己的防火牆規則（範例）
 
-## 已知地雷（血淚，勿重蹈）
-1. `cat | ssh` 傳中文檔會爛 → 只用 scp＋對 hash。
-2. PowerShell 會塞 CR 進檔案 → `.sh` 上傳前先掃，傳完跑 `sh -n`。
-3. fw4 `option ipset` 一定要配 uci ipset 區段；include 自建的 set 引用不到（`references unknown set`）。
-4. fw4 reload 不重讀 loadfile；改區段先手動清舊 chain 否則新舊打架。
-5. LuCI `uci.set` 空陣列會被 rpcd 打回（ubus code 2）→ 用 `uci.unset`。
-6. `m.on('save')`、`uci.validate=uciname（含連字號不行）` 等 API 在 25.x 已死，照抄舊文會炸。
-7. 真實 DOM 的 `children` 唯讀、`$$` 在子 shell 拿到父 pid——harness 已仿真，別繞過 harness。
-8. `/etc/nftables.d/` 會被 fw4 自動載入；uci 裡再引一次就會載入兩次。
+```sh
+# 集合掛到既有規則（B 組：只放行集合內來源）
+uci set firewall.@rule[0].ipset='allowed-IPList'
+uci commit firewall && fw4 reload
+```
 
-## 打包成 .apk/.ipk（給別台 OpenWrt 用）
-- 本包已是標準 `luci-app-*` 結構（`Makefile`＋`root/`＋conffile＋uci-defaults），純 shell＋js 無編譯碼，`LUCI_PKGARCH:=all`，單一包通吃所有架構。
-- 24.x（opkg）：用該版 ImageBuilder/SDK `make package/luci-app-geoguard/compile` → `.ipk`。
-- 25.x（apk）：同上用 25.12 SDK → `.apk`（檔名會是 `luci-app-geoguard_2026.09.11-1_all.apk`，這就是你要的 `.apk`）。
-- 安裝：LuCI 軟體頁上傳或 `apk add xxx.apk`／`opkg install xxx.ipk`；裝完到本頁按一次「立即更新並合併」即活（uci-defaults 只排 cron 不抓檔）。
-- 注意：別台機器的防火牆規則要自己掛集合（`uci set firewall.@rule[X].ipset='<集合名>'`），本包只生產集合不動規則。
+## 開發
+
+- `luci-app-geoguard/`：標準 luci.mk 結構（`Makefile`＋`root/`＋`po/`）
+- `tools/luci-harness.js`：前端測試（mini-DOM）；`tools/i18n-check.js`：中英對齊檢查；`tools/py_lmo.py`：po→lmo
+- `packaging/`：APKBUILD＋一鍵產線 `build_packages.py`＋說明 `BUILD.md`
+- 改 `.js` 跑 harness 全綠，改 `.sh` 跑 `sh -n`＋零 CR；LF 換行（`.gitattributes` 鎖定）
+
+## 授權
+
+MIT，見 LICENSE。
