@@ -58,14 +58,11 @@ def main():
     temp_dir = 'E:/Temp/opencode'
     os.makedirs(temp_dir, exist_ok=True)
 
-    # 1. Build .lmo
+    # 1. Build .lmo (EN is the source language: no en.lmo needed)
     lmo_jobs = [
-        ('en/geoguard.po', 'geoguard.en.lmo', [
-            ('登入防護', 'Login Guard'),
-            ('解除所有IP的封鎖', 'Unban all IPs'),
-            ('每天', 'Daily'),
-        ]),
         ('zh-tw/geoguard.po', 'geoguard.zh-tw.lmo', [
+            ('Login Guard', '登入防護'),
+            ('Unban all IPs', '解除所有IP的封鎖'),
             ('GeoGuard', '國門守衛 GeoGuard'),
         ]),
     ]
@@ -153,7 +150,6 @@ def main():
     # 6. Pull artifacts
     pulls = [
         (f'/home/builder/packages/builder/x86_64/{APP}-{ver}-r{rel}.apk', f'{APP}_{ver}-r{rel}_all.apk'),
-        (f'/home/builder/packages/builder/x86_64/luci-i18n-geoguard-en-{ver}-r{rel}.apk', f'luci-i18n-geoguard-en_{ver}-r{rel}_all.apk'),
         (f'/home/builder/packages/builder/x86_64/luci-i18n-geoguard-zh-tw-{ver}-r{rel}.apk', f'luci-i18n-geoguard-zh-tw_{ver}-r{rel}_all.apk'),
         ('/home/builder/.abuild/root-6aa40cae.rsa.pub', 'chinoyan-sign-6aa40cae.rsa.pub'),
     ]

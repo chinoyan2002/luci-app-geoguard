@@ -16,7 +16,7 @@ if (!/var VERSION = '\d+\.\d+\.\d+'/.test(code)) {
   console.error('HARNESS-FAIL: 缺 VERSION 常數');
   process.exit(1);
 }
-if (code.indexOf('IPs 設定') < 0) {
+if (code.indexOf('IP Sets') < 0) {
   console.error('HARNESS-FAIL: 缺 IPs 設定籤名');
   process.exit(1);
 }
@@ -100,7 +100,7 @@ const fsStub = {
   exec: (cmd) => {
     execCalls.push(cmd);
     if (cmd === '/usr/bin/geoguard-status')
-      return Promise.resolve({ code: 0, stdout: '===== 集合狀態 =====\n集合檔：x (100 行)\n===== 更新歷史（近 20 筆） =====\n2026-09-11|update|ok\n' });
+      return Promise.resolve({ code: 0, stdout: '===== Set status =====\nSet file:x (100 lines)\n===== Update history (last 20) =====\n2026-09-11|update|ok\n' });
     return Promise.resolve({ code: 0 });
   },
 };
@@ -181,9 +181,9 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
 
   // 3. 三鍵同排（E button，點合併鍵）
   const btnByText = (t) => NODES.find((n) => n.tag === 'button' && n.textContent === t);
-  const mergeBtn = btnByText('立即更新並合併');
-  const fetchBtn0 = btnByText('立即更新 IP 集合');
-  const saveBtn0 = btnByText('儲存設定');
+  const mergeBtn = btnByText('Update and Merge Now');
+  const fetchBtn0 = btnByText('Update IP Sets Now');
+  const saveBtn0 = btnByText('Save Settings');
   if (!mergeBtn || !fetchBtn0 || !saveBtn0) { console.error('HARNESS-FAIL: 三鍵缺失'); process.exit(1); }
   if (!(mergeBtn.parent && mergeBtn.parent === fetchBtn0.parent && fetchBtn0.parent === saveBtn0.parent)) {
     console.error('HARNESS-FAIL: 三鍵不在同一排');
@@ -219,7 +219,7 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
   const twBox = NODES.find((n) => n.tag === 'input' && n.attrs.type === 'checkbox' && n.attrs.value === 'tw');
   twBox.checked = false;
   await twBox.fire('change');
-  const fetchBtn = NODES.find((n) => n.tag === 'button' && n.textContent === '立即更新 IP 集合');
+  const fetchBtn = NODES.find((n) => n.tag === 'button' && n.textContent === 'Update IP Sets Now');
   await fetchBtn.fire('click');
   if ('selected' in store.geoguard.main) {
     console.error('HARNESS-FAIL: 全空時 selected 應刪除，實際 ' + JSON.stringify(store.geoguard.main.selected));
@@ -229,7 +229,7 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
   // 5. 記錄頁 pre 應含狀態輸出
   const pres = NODES.filter((n) => n.tag === 'pre');
   console.log('pre count=' + pres.length);
-  if (!pres.some((p) => p.textContent.indexOf('集合狀態') >= 0)) {
+  if (!pres.some((p) => p.textContent.indexOf('Set status') >= 0)) {
     console.error('HARNESS-FAIL: 記錄頁缺少狀態輸出');
     process.exit(1);
   }
@@ -257,7 +257,7 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
     console.error('HARNESS-FAIL: 非法集合名仍執行了後端');
     process.exit(1);
   }
-  if (!notifications.some((t) => t.indexOf('不合規格') >= 0)) {
+  if (!notifications.some((t) => t.indexOf('Bad set name') >= 0)) {
     console.error('HARNESS-FAIL: 非法集合名無錯誤通知');
     process.exit(1);
   }
@@ -275,15 +275,15 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
   console.log('schedule save OK');
   // 8. 已選清單行：全空後應顯示尚未勾選
   const selDivs = NODES.filter((n) => n.tag === 'div' && n.attrs && n.attrs.class === 'country-selected');
-  if (selDivs.length === 0 || selDivs[0].textContent.indexOf('尚未勾選') < 0) {
+  if (selDivs.length === 0 || selDivs[0].textContent.indexOf('(none selected)') < 0) {
     console.error('HARNESS-FAIL: 已選清單行錯誤: ' + (selDivs[0] || {}).textContent);
     process.exit(1);
   }
   console.log('selected line empty OK');
   // 9. 全選 → 存檔應有 217 國；清除已選 → selected 消失
-  const selAllBtn = btnByText('全選');
-  const selNoneBtn = btnByText('清除已選');
-  const clrBtn = btnByText('清除');
+  const selAllBtn = btnByText('Select all');
+  const selNoneBtn = btnByText('Clear selected');
+  const clrBtn = btnByText('Clear');
   if (!selAllBtn || !selNoneBtn || !clrBtn) {
     console.error('HARNESS-FAIL: 全選/清除已選/清除按鈕缺失');
     process.exit(1);
@@ -316,9 +316,9 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
   }
   console.log('search-clear OK');
   // 11b. 國家標頭單列：標題＋全選＋清除已選＋已選行同一父層；按鈕寬度 CSS
-  const headStrong = NODES.find((n) => n.tag === 'strong' && n.textContent.indexOf('選擇國家') >= 0);
-  const selAllBtn2 = btnByText('全選');
-  const selNoneBtn2 = btnByText('清除已選');
+  const headStrong = NODES.find((n) => n.tag === 'strong' && n.textContent.indexOf('Select countries') >= 0);
+  const selAllBtn2 = btnByText('Select all');
+  const selNoneBtn2 = btnByText('Clear selected');
   const selDivsH = NODES.filter((n) => n.tag === 'div' && n.attrs && n.attrs.class === 'country-selected');
   if (!headStrong || !selAllBtn2 || !selNoneBtn2 || selDivsH.length === 0 ||
       !(headStrong.parent === selAllBtn2.parent && selAllBtn2.parent === selNoneBtn2.parent &&
@@ -332,7 +332,7 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
     process.exit(1);
   }
   // 動作列：三鍵同父層（A1 註記已刪除）
-  const abtns = ['立即更新 IP 集合', '立即更新並合併', '儲存設定'].map((t) =>
+  const abtns = ['Update IP Sets Now', 'Update and Merge Now', 'Save Settings'].map((t) =>
     NODES.find((n) => n.tag === 'button' && n.textContent === t));
   if (abtns.some((b) => !b) ||
       !(abtns[0].parent && abtns[0].parent === abtns[1].parent &&
@@ -410,13 +410,13 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
   // ddns_interval 是併列自訂輸入：用 pushBan 寫入斷言（見 ban-actions）
   const numLabels = NODES.filter((n) => n.tag === 'label').map((n) => n.textContent);
   // 自訂列標籤走 DOM；框架欄位標題走原始碼（含 po msgid 一致性由 i18n-check 管）
-  for (const need of ['檢視記錄並封鎖的間隔', '在幾（分鐘）內']) {
+  for (const need of ['Log review and ban interval (sec)', 'Within (minutes)']) {
     if (!numLabels.some((t) => t.indexOf(need) >= 0)) {
       console.error('HARNESS-FAIL: 併列缺標籤 ' + need);
       process.exit(1);
     }
   }
-  for (const need of ['永不封鎖的白名單', '解除所有IP的封鎖', 'IP地理定位-主要訂閱源', 'IP地理定位-備用訂閱源', '啟用此選項來封鎖登入失敗次數過多的 IP 位址']) {
+  for (const need of ['Never-block whitelist', 'Unban all IPs', 'IP Geolocation - Primary Feed', 'IP Geolocation - Backup Feed', 'Enable this option to block IP addresses with too many failed logins']) {
     if (code.indexOf(need) < 0) {
       console.error('HARNESS-FAIL: 缺新標籤 ' + need);
       process.exit(1);
@@ -451,17 +451,17 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
   console.log('ddns-fields OK');
   // 12c. 全擋說明的數字跟著參數走（store ban_bantime=2 → 含「2 小時」）
   const allText = NODES.map((n) => n.textContent || '').join('\n');
-  if (allText.indexOf('2 小時自動解封') < 0) {
+  if (allText.indexOf('auto-released after 2 hours') < 0) {
     console.error('HARNESS-FAIL: 全擋說明未帶參數值');
     process.exit(1);
   }
-  if (/\d 小時自動解封/.test(allText) && allText.indexOf('2 小時自動解封') < 0) {
+  if (/auto-released after \d+ hours/.test(allText) && allText.indexOf('auto-released after 2 hours') < 0) {
     console.error('HARNESS-FAIL: 全擋說明數字寫死');
     process.exit(1);
   }
   console.log('bannote-dynamic OK');
-  const banSaveBtn = btnByText('儲存防護設定並重啟');
-  const unbanBtn = btnByText('解除所有IP的封鎖');
+  const banSaveBtn = btnByText('Save & Restart Guard');
+  const unbanBtn = btnByText('Unban all IPs');
   if (!banSaveBtn || !unbanBtn || banSaveBtn.parent !== unbanBtn.parent) {
     console.error('HARNESS-FAIL: 防護按鍵缺失或不同列');
     process.exit(1);

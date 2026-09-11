@@ -23,7 +23,7 @@ mkdir -p "$BASE_DIR" "$TEMP_DIR"
 trap 'rm -rf "$TEMP_DIR"' EXIT
 
 hist() {
-  echo "$(date '+%F %T')|update|$SETNAME|集合=$1 $2" >> "$BASE_DIR/history.log"
+  echo "$(date '+%F %T')|update|$SETNAME|countries=$1 $2" >> "$BASE_DIR/history.log"
   tail -n 200 "$BASE_DIR/history.log" > "$TEMP_DIR/hist" 2>/dev/null \
     && mv "$TEMP_DIR/hist" "$BASE_DIR/history.log"
 }
@@ -241,5 +241,5 @@ logger -t geoguard "done $SETNAME +$WHITENAME"
 if [ "$changed_files" = "1" ]; then
   hist "merged+white" "ok"
 else
-  hist "merged+white" "目前沒有新的更新"
+  hist "merged+white" "no new updates at the moment"
 fi

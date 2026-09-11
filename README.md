@@ -12,7 +12,7 @@ OpenWrt LuCI App：勾選國家＋自訂白名單 → 從雙訂閱源抓取 IP �
 ## 安裝
 
 - OpenWrt 24.x（opkg）：`opkg install luci-app-geoguard_*_all.ipk`
-- OpenWrt 25.x（apk）：`apk add luci-app-geoguard_*_all.apk`（另有 `luci-i18n-geoguard-en`、`luci-i18n-geoguard-zh-tw` 語系包）
+- OpenWrt 25.x（apk）：`apk add luci-app-geoguard_*_all.apk`（另有 `luci-i18n-geoguard-zh-tw` 語系包；英文即原始字串，不需語系包）
 - 預編包見 GitHub Releases；或用 SDK：`make package/luci-app-geoguard/compile`
 - 裝完到 網路 → 國門守衛 GeoGuard 按一次「立即更新並合併」即活
 

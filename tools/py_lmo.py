@@ -125,17 +125,18 @@ def verify_lmo(path, probes):
 
 if __name__ == '__main__':
     here = os.path.dirname(os.path.abspath(__file__))
-    po = os.path.normpath(os.path.join(here, '../luci-app-geoguard/po/en/geoguard.po'))
+    po = os.path.normpath(os.path.join(here, '../luci-app-geoguard/po/zh-tw/geoguard.po'))
     entries = parse_po(po)
     print('parsed', len(entries))
     out, n = build_lmo(entries)
-    lmo = os.path.normpath(os.path.join(here, '../luci-app-geoguard/po/en/geoguard.en.lmo'))
+    import tempfile
+    lmo = os.path.join(tempfile.gettempdir(), 'geoguard.zh-tw.lmo')
     open(lmo, 'wb').write(out)
     print('wrote', lmo, len(out), 'bytes,', n, 'entries')
     probes = [
-        ('登入防護', 'Login Guard'),
-        ('解除所有IP的封鎖', 'Unban all IPs'),
-        ('每天', 'Daily'),
+        ('Login Guard', '登入防護'),
+        ('Unban all IPs', '解除所有IP的封鎖'),
+        ('GeoGuard', '國門守衛 GeoGuard'),
     ]
     assert verify_lmo(lmo, probes), 'LMO VERIFY FAILED'
     print('LMO-VERIFY-OK')

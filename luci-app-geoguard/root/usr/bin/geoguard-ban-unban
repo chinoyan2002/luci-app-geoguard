@@ -9,7 +9,7 @@ case "$1" in
     logger -t geoguard-ban "unbanned all"
     ;;
   *)
-    case "$1" in *[!0-9.]*) echo "格式錯誤"; exit 1 ;; esac
+    case "$1" in *[!0-9.]*) echo "bad IP format"; exit 1 ;; esac
     nft delete element inet fw4 $SET "{ $1 }" 2>/dev/null \
       && logger -t geoguard-ban "unbanned $1"
     ;;

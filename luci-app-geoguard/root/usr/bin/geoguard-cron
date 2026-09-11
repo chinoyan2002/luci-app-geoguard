@@ -28,9 +28,9 @@ if [ "$(uci -q get geoguard.main.auto_update)" = "1" ]; then
 		*)       SPEC="$MIN $HOUR * * *" ;;
 	esac
 	echo "$SPEC $JOB" >> "$CRON_FILE"
-	logger -t geoguard "已設定排程 $SPEC"
+	logger -t geoguard "schedule set: $SPEC"
 else
-	logger -t geoguard "已關閉自動更新"
+	logger -t geoguard "auto update disabled"
 fi
 
 /etc/init.d/cron restart >/dev/null 2>&1

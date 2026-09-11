@@ -5,7 +5,7 @@
 'require ui';
 'require uci';
 
-var VERSION = '2.0.1';
+var VERSION = '2.1.0';
 var fmt = function(s) {
 	var args = Array.prototype.slice.call(arguments, 1);
 	var i = 0;
@@ -113,7 +113,7 @@ function wlCheck(v) {
 	var ip = '(' + oct + '\\.){3}' + oct;
 	var re = new RegExp('^' + ip + '(/([0-9]|[12][0-9]|3[0-2]))?$|^' + ip + '-' + ip + '$');
 	if (!re.test(v))
-		return _('格式錯誤：請輸入單一 IP（如 203.0.113.10）、CIDR（如 203.0.113.0/24）或範圍（如 203.0.113.10-203.0.113.50）');
+		return _('Invalid format: enter a single IP (e.g. 203.0.113.10), CIDR (e.g. 203.0.113.0/24) or range (e.g. 203.0.113.10-203.0.113.50)');
 	return true;
 }
 
@@ -180,8 +180,8 @@ return view.extend({
 		var countsLine = function() {
 			var p = (countsText || '').split(/\s+/);
 			if (p.length < 4 || !p[0])
-				return _('目前啟用的集合：尚無資料');
-			return fmt(_('目前啟用：%s.cidr（%s 行／live %s 段／更新於 %s）'), p[0], p[1], p[2], p[3].replace('_', ' '));
+				return _('Active set: no data yet');
+			return fmt(_('Active: %s.cidr (%s lines / %s live entries / updated %s)'), p[0], p[1], p[2], p[3].replace('_', ' '));
 		};
 
 		var refreshCounts = function() {
@@ -197,14 +197,14 @@ return view.extend({
 			}).catch(function() {});
 		};
 
-		m = new form.Map('geoguard', _('國門守衛 GeoGuard Ver:') + VERSION,
-			_('勾選國家＋白名單 IP，合併成集合檔。本頁只生產 IP 集合，不動防火牆。'));
+		m = new form.Map('geoguard', _('GeoGuard Ver:') + VERSION,
+			_('Select countries + whitelist IPs, merged into sets. This page only builds IP sets, never touches the firewall.'));
 
-		s = m.section(form.TypedSection, 'geoguard', _('設定'));
+		s = m.section(form.TypedSection, 'geoguard', _('Settings'));
 		s.anonymous = true;
-		s.tab('ban', _('登入防護'));
-		s.tab('settings', _('IPs 設定'));
-		s.tab('log', _('記錄'));
+		s.tab('ban', _('Login Guard'));
+		s.tab('settings', _('IP Sets'));
+		s.tab('log', _('Log'));
 
 		o = s.taboption('settings', form.DummyValue, '_countries');
 		o.render = function(section_id) {
@@ -229,8 +229,8 @@ return view.extend({
 				var arr = Object.keys(countryState).sort();
 				while (selLine.firstChild)
 					selLine.removeChild(selLine.firstChild);
-				selLine.appendChild(E('strong', {}, [_('已勾選：')]));
-				selLine.appendChild(E('span', {}, [arr.length > 0 ? arr.join(',').toUpperCase() : _('（尚未勾選）')]));
+				selLine.appendChild(E('strong', {}, [_('Selected: ')]));
+				selLine.appendChild(E('span', {}, [arr.length > 0 ? arr.join(',').toUpperCase() : _('(none selected)')]));
 			};
 			for (i = 0; i < CONTINENTS.length; i++) {
 				for (j = 0; j < CONTINENTS[i][2].length; j++) {
@@ -272,14 +272,14 @@ return view.extend({
 				refreshSel();
 			});
 
-			var input = E('input', { 'type': 'text', 'placeholder': _('搜尋，如 TW 台灣 TAIWAN'), 'class': 'country-search' });
+			var input = E('input', { 'type': 'text', 'placeholder': _('Search, e.g. TW 台灣 TAIWAN'), 'class': 'country-search' });
 			input.addEventListener('input', function() {
 				var q = (input.value || '').toUpperCase();
 				rows.forEach(function(r) {
 					r.el.style.display = (q === '' || r.text.indexOf(q) >= 0) ? '' : 'none';
 				});
 			});
-			var clearBtn = E('button', { 'class': 'btn cbi-button cbi-button-neutral' }, [_('清除')]);
+			var clearBtn = E('button', { 'class': 'btn cbi-button cbi-button-neutral' }, [_('Clear')]);
 			clearBtn.addEventListener('click', function(ev) {
 				if (ev && ev.preventDefault)
 					ev.preventDefault();
@@ -287,7 +287,7 @@ return view.extend({
 				rows.forEach(function(r) { r.el.style.display = ''; });
 			});
 
-			var selAllBtn = E('button', { 'class': 'btn cbi-button cbi-button-neutral', 'style': 'margin-right:0.5em' }, [_('全選')]);
+			var selAllBtn = E('button', { 'class': 'btn cbi-button cbi-button-neutral', 'style': 'margin-right:0.5em' }, [_('Select all')]);
 			selAllBtn.addEventListener('click', function(ev) {
 				if (ev && ev.preventDefault)
 					ev.preventDefault();
@@ -299,7 +299,7 @@ return view.extend({
 				});
 				refreshSel();
 			});
-			var selNoneBtn = E('button', { 'class': 'btn cbi-button cbi-button-neutral' }, [_('清除已選')]);
+			var selNoneBtn = E('button', { 'class': 'btn cbi-button cbi-button-neutral' }, [_('Clear selected')]);
 			selNoneBtn.addEventListener('click', function(ev) {
 				if (ev && ev.preventDefault)
 					ev.preventDefault();
@@ -314,15 +314,15 @@ return view.extend({
 				E('thead', { 'style': 'position:sticky;top:0;background-color:#f0f0f0' }, [
 					E('tr', {}, [
 						E('th', { 'style': 'width:40px' }, [allCb]),
-						E('th', { 'style': 'width:90px' }, [_('編碼')]),
-						E('th', {}, [_('位置')])
+						E('th', { 'style': 'width:90px' }, [_('Code')]),
+						E('th', {}, [_('Location')])
 					])
 				]),
 				tbody
 			]);
 			var wrap = E('div', { 'style': 'max-height:420px;overflow:auto;border:1px solid #ccc' }, [table]);
 			var headRow = E('div', { 'style': 'display:flex;align-items:center;gap:0.5em;margin-bottom:0.5em;flex-wrap:wrap' }, [
-				E('strong', {}, [_('選擇國家')]),
+				E('strong', {}, [_('Select countries')]),
 				input, clearBtn,
 				E('span', { 'style': 'color:#999' }, ['：']),
 				selAllBtn, selNoneBtn, selLine
@@ -353,7 +353,7 @@ return view.extend({
 				while (listBox.firstChild)
 					listBox.removeChild(listBox.firstChild);
 				wlState.forEach(function(v, idx) {
-					var del = E('button', { 'class': 'btn cbi-button cbi-button-neutral' }, [_('刪除')]);
+					var del = E('button', { 'class': 'btn cbi-button cbi-button-neutral' }, [_('Delete')]);
 					del.addEventListener('click', function(ev) {
 						if (ev && ev.preventDefault)
 							ev.preventDefault();
@@ -372,7 +372,7 @@ return view.extend({
 					errLine.appendChild(E('span', {}, [msg]));
 			};
 			var inp = E('input', { 'type': 'text', 'class': 'cbi-input-text', 'placeholder': '例如 203.0.113.10、203.0.113.0/24、203.0.113.10-203.0.113.50', 'style': 'flex:1;margin-right:0.5em' });
-			var addBtn = E('button', { 'class': 'btn cbi-button cbi-button-action' }, [_('新增')]);
+			var addBtn = E('button', { 'class': 'btn cbi-button cbi-button-action' }, [_('Add')]);
 			addBtn.addEventListener('click', function(ev) {
 				if (ev && ev.preventDefault)
 					ev.preventDefault();
@@ -390,42 +390,42 @@ return view.extend({
 			});
 			drawList();
 			return E('div', { 'class': 'cbi-value' }, [
-				E('label', { 'class': 'cbi-value-title' }, [_('除國家外要包含的 白名單：IP / CIDR / 範圍')]),
+				E('label', { 'class': 'cbi-value-title' }, [_('Whitelist beyond countries: IP / CIDR / Range')]),
 				E('div', { 'class': 'cbi-value-field' }, [
 					E('div', { 'style': 'display:flex;margin-bottom:0.5em' }, [inp, addBtn]),
 					listBox, errLine,
-					E('div', { 'class': 'cbi-value-description' }, [_('格式：單一 IP、CIDR、A-B 範圍。國家全空＋有 IP＝純白名單。')])
+					E('div', { 'class': 'cbi-value-description' }, [_('Formats: single IP, CIDR, A-B range. No country + IPs = pure whitelist.')])
 				])
 			]);
 		};
 
-		o = s.taboption('settings', form.Value, 'src_primary', _('IP地理定位-主要訂閱源'));
+		o = s.taboption('settings', form.Value, 'src_primary', _('IP Geolocation - Primary Feed'));
 		o.default = 'https://www.ipdeny.com/ipblocks/data/aggregated/{cc}-aggregated.zone';
 		o.rmempty = false;
-		o.description = _('{cc} 會換成國碼小寫，{CC} 大寫。');
-		o = s.taboption('settings', form.Value, 'src_backup', _('IP地理定位-備用訂閱源'));
+		o.description = _('{cc} becomes the lowercase code, {CC} uppercase.');
+		o = s.taboption('settings', form.Value, 'src_backup', _('IP Geolocation - Backup Feed'));
 		o.default = 'https://raw.githubusercontent.com/ipverse/country-ip-blocks/master/country/{cc}/ipv4-aggregated.txt';
 		o.rmempty = false;
-		o.description = _('失敗改抓備用；抓不到沿用舊檔。');
+		o.description = _('Falls back on failure; keeps the old file if both fail.');
 
-		o = s.taboption('settings', form.Value, 'setname', _('多國家+自訂白名單IP的總集合名稱'));
+		o = s.taboption('settings', form.Value, 'setname', _('Merged set name (countries + custom whitelist)'));
 		o.validate = function(section_id, value) {
 			if (!/^[A-Za-z][A-Za-z0-9_-]*$/.test(value || ''))
-				return _('只允許英文開頭，後接英文數字底線連字號');
+				return _('Must start with a letter, followed by letters, digits, _ or -');
 			return true;
 		};
 		o.default = 'allowed-IPList';
 		o.rmempty = false;
-		o.description = _('規則：英文開頭，僅英文數字底線連字號。檔名與 set 同名；改名舊檔保留。');
-		o = s.taboption('settings', form.Value, 'white_name', _('白名單集合名稱'));
+		o.description = _('Rule: start with a letter; letters/digits/_/- only. File shares the set name; old file kept after rename.');
+		o = s.taboption('settings', form.Value, 'white_name', _('Whitelist set name'));
 		o.validate = function(section_id, value) {
 			if (!/^[A-Za-z][A-Za-z0-9_-]*$/.test(value || ''))
-				return _('只允許英文開頭，後接英文數字底線連字號');
+				return _('Must start with a letter, followed by letters, digits, _ or -');
 			return true;
 		};
 		o.default = 'CustomAllow';
 		o.rmempty = false;
-		o.description = _('白名單獨立成一個集合，防火牆 IP 集合頁可見，規則同上。');
+		o.description = _('Whitelist lives in its own set, visible under Firewall IP Sets. Same rules as above.');
 
 		o = s.taboption('settings', form.DummyValue, '_sched');
 		o.render = function(section_id) {
@@ -436,9 +436,9 @@ return view.extend({
 			schedState.hour = hour;
 			schedState.min = min;
 			var freqSel = E('select', {}, [
-				E('option', { 'value': 'daily' }, [_('每天')]),
-				E('option', { 'value': 'weekly' }, [_('每週日')]),
-				E('option', { 'value': 'monthly' }, [_('每月 1 日')])
+				E('option', { 'value': 'daily' }, [_('Daily')]),
+				E('option', { 'value': 'weekly' }, [_('Weekly (Sun)')]),
+				E('option', { 'value': 'monthly' }, [_('Monthly (1st)')])
 			]);
 			freqSel.value = freq;
 			freqSel.addEventListener('change', function() { schedState.freq = freqSel.value; });
@@ -469,12 +469,12 @@ return view.extend({
 			schedState.auto = autoCb.checked ? '1' : '0';
 			autoCb.addEventListener('change', function() { schedState.auto = autoCb.checked ? '1' : '0'; });
 			return E('div', { 'class': 'cbi-value' }, [
-				E('label', { 'class': 'cbi-value-title' }, [_('自動更新清單頻率')]),
+				E('label', { 'class': 'cbi-value-title' }, [_('Auto-update schedule')]),
 				E('div', { 'class': 'cbi-value-field' }, [
 					freqSel, E('span', {}, [' ']),
-					E('span', {}, [_('時')]), E('span', {}, [' ']), hourSel,
-					E('span', {}, [' ']), E('span', {}, [_('分')]), E('span', {}, [' ']), minSel,
-					E('span', {}, ['  ']), autoCb, E('span', {}, [' ']), E('span', {}, [_('啟用自動更新')])
+					E('span', {}, [_('Hour')]), E('span', {}, [' ']), hourSel,
+					E('span', {}, [' ']), E('span', {}, [_('Minute')]), E('span', {}, [' ']), minSel,
+					E('span', {}, ['  ']), autoCb, E('span', {}, [' ']), E('span', {}, [_('Enable auto-update')])
 				])
 			]);
 		};
@@ -482,9 +482,9 @@ return view.extend({
 		o.render = function(section_id) {
 			return E('div', { 'class': 'cbi-section' }, [
 				E('style', {}, ['#cbi-geoguard input.cbi-input-text{width:100%;max-width:1024px}#cbi-geoguard .cbi-value-title{width:300px;flex:0 0 300px;white-space:nowrap;text-align:left!important}#cbi-geoguard .cbi-value-field .btn{width:auto}#cbi-geoguard table.cbi-section-table td,#cbi-geoguard table.cbi-section-table th{padding:3px 6px;text-align:left!important}#cbi-geoguard p{margin:0.3em 0;text-align:left}#cbi-geoguard .cbi-dynlist{width:100%;max-width:none}#cbi-geoguard .cbi-dynlist .add-item{display:flex}#cbi-geoguard .cbi-dynlist .add-item input{flex:1;margin-right:0.5em}#cbi-geoguard .cbi-value label.cbi-value-title{width:auto;text-align:left!important}#cbi-geoguard div.cbi-value{text-align:left}']),
-				E('p', {}, [_('本頁只負責產生 IP 集合檔，不動防火牆任何規則。')]),
-				E('p', {}, [_('生效方式：網路→防火牆→連接埠轉發→新增→進階設定→IPSet 下拉選集合，存檔套用。')]),
-				E('p', {}, [_('備用（SSH）：uci set firewall.@redirect[N].ipset＝集合名稱，commit 後 fw4 reload。')])
+				E('p', {}, [_('This page only builds IP set files and never changes firewall rules.')]),
+				E('p', {}, [_('Apply: Network → Firewall → Port Forwards → Add → Advanced → pick the set in IPSet, then Save & Apply.')]),
+				E('p', {}, [_('Fallback (SSH): uci set firewall.@redirect[N].ipset=set name, commit, then fw4 reload.')])
 			]);
 		};
 
@@ -499,7 +499,7 @@ return view.extend({
 					return uci.apply();
 				}).then(function() {
 					if (!checkSetname()) {
-						ui.addNotification(null, E('p', _('集合名稱不合規格（英文字母開頭，僅英文數字底線連字號），設定已存檔但不會執行更新')), 'error');
+						ui.addNotification(null, E('p', _('Bad set name (must start with a letter: letters/digits/_/- only). Settings saved, update skipped.')), 'error');
 						throw { handled: true };
 					}
 					if (noexec) {
@@ -521,12 +521,12 @@ return view.extend({
 						ui.addNotification(null, E('p', _(okmsg)), 'info');
 						return refreshCounts();
 					} else {
-						ui.addNotification(null, E('p', fmt(_('更新失敗：%s'), res.stderr || res.stdout || _('未知錯誤'))), 'error');
+						ui.addNotification(null, E('p', fmt(_('Update failed: %s'), res.stderr || res.stdout || _('unknown error'))), 'error');
 					}
 				}).catch(function(e) {
 					if (e && e.handled)
 						return;
-					ui.addNotification(null, E('p', fmt(_('執行失敗：%s'), e.message)), 'error');
+					ui.addNotification(null, E('p', fmt(_('Failed: %s'), e.message)), 'error');
 				});
 			};
 			var mkbtn = function(cmd, title, okmsg, noexec) {
@@ -539,16 +539,16 @@ return view.extend({
 				return b;
 			};
 			return E('div', { 'style': 'display:flex;align-items:center;gap:0.5em;flex-wrap:wrap' }, [
-				mkbtn('/usr/bin/geoguard-fetch', _('立即更新 IP 集合'), 'IP 集合已更新（僅抓檔，未合併重載）', false),
-				mkbtn('/usr/bin/geoguard-update', _('立即更新並合併'), '已成功更新並合併（含白名單）', false),
-				mkbtn(null, _('儲存設定'), '設定已儲存（排程已同步）', true)
+				mkbtn('/usr/bin/geoguard-fetch', _('Update IP Sets Now'), 'IP 集合已更新（僅抓檔，未合併重載）', false),
+				mkbtn('/usr/bin/geoguard-update', _('Update and Merge Now'), '已成功更新並合併（含白名單）', false),
+				mkbtn(null, _('Save Settings'), '設定已儲存（排程已同步）', true)
 			]);
 		};
 
 		o = s.taboption('log', form.DummyValue, '_log');
 		o.render = function(section_id) {
 			var pre = E('pre', { 'style': 'white-space:pre-wrap' }, [logText]);
-			var clr = E('button', { 'class': 'btn cbi-button cbi-button-neutral', 'style': 'margin-bottom:0.5em' }, [_('清除更新歷史')]);
+			var clr = E('button', { 'class': 'btn cbi-button cbi-button-neutral', 'style': 'margin-bottom:0.5em' }, [_('Clear Update History')]);
 			clr.addEventListener('click', function(ev) {
 				if (ev && ev.preventDefault)
 					ev.preventDefault();
@@ -558,19 +558,19 @@ return view.extend({
 					while (pre.firstChild)
 						pre.removeChild(pre.firstChild);
 					pre.appendChild(document.createTextNode(res.stdout || ''));
-					ui.addNotification(null, E('p', _('更新歷史已清除')), 'info');
+					ui.addNotification(null, E('p', _('Update history cleared')), 'info');
 				}).catch(function(e) {
-					ui.addNotification(null, E('p', fmt(_('執行失敗：%s'), e.message)), 'error');
+					ui.addNotification(null, E('p', fmt(_('Failed: %s'), e.message)), 'error');
 				});
 			});
 			return E('div', {}, [clr, pre]);
 		};
 
 		/* ---- 登入防護籤（7 列緊湊版：短欄併列、清單獨佔） ---- */
-		o = s.taboption('ban', form.Flag, 'ban_enabled', _('啟用此選項來封鎖登入失敗次數過多的 IP 位址'));
+		o = s.taboption('ban', form.Flag, 'ban_enabled', _('Enable this option to block IP addresses with too many failed logins'));
 		o.default = '1';
 		o.rmempty = false;
-		o.description = _('關閉即停掉防護服務，已封鎖的不自動解封。');
+		o.description = _('Disabling stops the guard service; active bans stay until expiry.');
 
 		var banState = { maxretry: '8', findtime: '5', bantime: '2', web: '1', ssh: '1', ddnsint: '3', banint: '60' };
 		var banClamp = function(v, lo, hi, def) {
@@ -621,9 +621,9 @@ return view.extend({
 			banState.findtime = uci.get('geoguard', 'main', 'ban_findtime') || '5';
 			banState.bantime = uci.get('geoguard', 'main', 'ban_bantime') || '2';
 			return banRow([
-				[_('在幾（分鐘）內'), numIn(banState.findtime, 1, 60, function(v) { banState.findtime = v; })],
-				[_('失敗幾次封鎖'), numIn(banState.maxretry, 1, 100, function(v) { banState.maxretry = v; })],
-				[_('封鎖多久（小時）'), numIn(banState.bantime, 1, 72, function(v) { banState.bantime = v; })]
+				[_('Within (minutes)'), numIn(banState.findtime, 1, 60, function(v) { banState.findtime = v; })],
+				[_('Fails to ban'), numIn(banState.maxretry, 1, 100, function(v) { banState.maxretry = v; })],
+				[_('Ban time (hours)'), numIn(banState.bantime, 1, 72, function(v) { banState.bantime = v; })]
 			]);
 		};
 		o = s.taboption('ban', form.DummyValue, '_banscope');
@@ -631,62 +631,62 @@ return view.extend({
 			banState.web = uci.get('geoguard', 'main', 'ban_web') || '1';
 			banState.ssh = uci.get('geoguard', 'main', 'ban_ssh') || '1';
 			return banRow([
-				[_('防護 LuCI 網頁登入'), flagIn(banState.web, function(v) { banState.web = v; })],
-				[_('防護 SSH 登入'), flagIn(banState.ssh, function(v) { banState.ssh = v; })]
+				[_('Guard LuCI web login'), flagIn(banState.web, function(v) { banState.web = v; })],
+				[_('Guard SSH login'), flagIn(banState.ssh, function(v) { banState.ssh = v; })]
 			]);
 		};
-		o = s.taboption('ban', form.DynamicList, 'ban_exempt', _('永不封鎖的白名單'));
+		o = s.taboption('ban', form.DynamicList, 'ban_exempt', _('Never-block whitelist'));
 		o.validate = function(section_id, value) {
 			if (!value || !value.trim())
 				return true;
 			var oct = '(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])';
 			var ip = '(' + oct + '\\.){3}' + oct;
 			if (!new RegExp('^' + ip + '(/([0-9]|[12][0-9]|3[0-2]))?$').test(value.trim()))
-				return _('請輸入 IP 或 CIDR（如 192.168.0.0/16）');
+				return _('Enter an IP or CIDR (e.g. 192.168.0.0/16)');
 			return true;
 		};
 		o.rmempty = true;
-		o.description = _('此清單內的 IP／網段永久免於封鎖。系統預設已含保留位址與內網段。另有兩類自動免封，無需在此重複填寫：IP 白名單（IPs 設定籤）與 DDNS 白名單（本籤下方），後者 IP 變動時自動跟隨。');
-		o = s.taboption('ban', form.DynamicList, 'company_ddns', _('DDNS 白名單清單'));
+		o.description = _('IPs/subnets here are never banned. Defaults already cover reserved and private ranges. Two more auto-exempt sources need no entry here: IP whitelist (IP Sets tab) and DDNS whitelist (below), whose IPs follow automatically.');
+		o = s.taboption('ban', form.DynamicList, 'company_ddns', _('DDNS allowlist'));
 		o.validate = function(section_id, value) {
 			if (!value || !value.trim())
 				return true;
 			if (!/^(?=.{1,253}$)[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)+$/.test(value.trim()))
-				return _('請輸入合法網域名稱（如 home.example.org）');
+				return _('Enter a valid domain (e.g. home.example.org)');
 			return true;
 		};
 		o.rmempty = true;
-		o.description = _('可新增多筆；每筆獨立追 IP。本清單只適用防護免封，不動 IP 集合。');
+		o.description = _('Add multiple entries; each tracked separately. For guard exemption only; never touches IP sets.');
 		o = s.taboption('ban', form.DummyValue, '_banperiod');
 		o.render = function(section_id) {
 			banState.ddnsint = uci.get('geoguard', 'main', 'ddns_interval') || '30';
 			banState.banint = uci.get('geoguard', 'main', 'ban_interval') || '60';
 			return banRow([
-				[_('DDNS 檢查間隔（分鐘）'), numIn(banState.ddnsint, 1, 60, function(v) { banState.ddnsint = v; })],
-				[_('檢視記錄並封鎖的間隔（秒）'), numIn(banState.banint, 5, 300, function(v) { banState.banint = v; })]
+				[_('DDNS check interval (min)'), numIn(banState.ddnsint, 1, 60, function(v) { banState.ddnsint = v; })],
+				[_('Log review and ban interval (sec)'), numIn(banState.banint, 5, 300, function(v) { banState.banint = v; })]
 			]);
 		};
-		o = s.taboption('ban', form.Value, 'ban_wan_if', _('外網介面（自動偵測）'));
+		o = s.taboption('ban', form.Value, 'ban_wan_if', _('WAN interface (auto-detect)'));
 		o.validate = function(section_id, value) {
 			if (!value || !value.trim())
 				return true;
 			if (!/^[A-Za-z0-9._-]+$/.test(value.trim()))
-				return _('介面名稱格式錯誤');
+				return _('Bad interface name');
 			return true;
 		};
 		o.rmempty = true;
-		o.description = _('留空自動偵測（firewall wan 區→系統→預設路由）。只有自動偵測失靈才手填（如 pppoe-wan）。');
+		o.description = _('Leave empty to auto-detect (firewall wan zone → system → default route). Fill in manually only if detection fails (e.g. pppoe-wan).');
 		o = s.taboption('ban', form.DummyValue, '_bannote');
 		o.render = function(section_id) {
 			var bh = uci.get('geoguard', 'main', 'ban_bantime') || '2';
 			return E('div', { 'class': 'cbi-section' }, [
-				E('p', {}, [fmt(_('被封鎖＝整台對他消失：外網進來的所有封包（所有 port、TCP/UDP/ICMP）在源頭全丟，%s 小時自動解封。'), bh)])
+				E('p', {}, [fmt(_('Banned = invisible: every packet from the WAN (all ports, TCP/UDP/ICMP) is dropped at ingress, auto-released after %s hours.'), bh)])
 			]);
 		};
 
 		o = s.taboption('ban', form.DummyValue, '_banstatus');
 		o.render = function(section_id) {
-			banPre = E('pre', { 'style': 'white-space:pre-wrap' }, [banText || _('狀態載入中…')]);
+			banPre = E('pre', { 'style': 'white-space:pre-wrap' }, [banText || _('Loading status…')]);
 			return E('div', {}, [banPre]);
 		};
 
@@ -713,20 +713,20 @@ return view.extend({
 					return fs.exec('/etc/init.d/geoguard-ban', ['reload']);
 				}).then(function(res) {
 					if (res.code === 0)
-						ui.addNotification(null, E('p', _('防護設定已儲存並重啟')), 'info');
+						ui.addNotification(null, E('p', _('Guard settings saved and restarted')), 'info');
 					else
-						ui.addNotification(null, E('p', fmt(_('重啟防護失敗：%s'), res.stderr || res.stdout || _('未知錯誤'))), 'error');
+						ui.addNotification(null, E('p', fmt(_('Guard restart failed: %s'), res.stderr || res.stdout || _('unknown error'))), 'error');
 					return refreshBan();
 				}).catch(function(e) {
-					ui.addNotification(null, E('p', fmt(_('執行失敗：%s'), e.message)), 'error');
+					ui.addNotification(null, E('p', fmt(_('Failed: %s'), e.message)), 'error');
 				});
 			};
 			var unbanAll = function() {
 				return fs.exec('/usr/bin/geoguard-ban-unban', ['all']).then(function() {
-					ui.addNotification(null, E('p', _('已全部解封')), 'info');
+					ui.addNotification(null, E('p', _('All unbanned')), 'info');
 					return refreshBan();
 				}).catch(function(e) {
-					ui.addNotification(null, E('p', fmt(_('執行失敗：%s'), e.message)), 'error');
+					ui.addNotification(null, E('p', fmt(_('Failed: %s'), e.message)), 'error');
 				});
 			};
 			var mkb = function(title, fn, cls) {
@@ -739,8 +739,8 @@ return view.extend({
 				return b;
 			};
 			return E('div', { 'style': 'display:flex;align-items:center;gap:0.5em;flex-wrap:wrap' }, [
-				mkb(_('儲存防護設定並重啟'), saveBan, 'cbi-button-action'),
-				mkb(_('解除所有IP的封鎖'), unbanAll, 'cbi-button-neutral')
+				mkb(_('Save & Restart Guard'), saveBan, 'cbi-button-action'),
+				mkb(_('Unban all IPs'), unbanAll, 'cbi-button-neutral')
 			]);
 		};
 
