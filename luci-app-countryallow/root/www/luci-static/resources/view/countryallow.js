@@ -418,6 +418,16 @@ return view.extend({
 		o.default = 'CustomAllow';
 		o.rmempty = false;
 		o.description = _('白名單獨立成一個集合，防火牆 IP 集合頁可見，規則同上。');
+		o = s.taboption('settings', form.Value, 'company_ddns', _('公司 DDNS（動態白名單）'));
+		o.validate = function(section_id, value) {
+			if (!value || !value.trim())
+				return true;
+			if (!/^(?=.{1,253}$)[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)+$/.test(value.trim()))
+				return _('請輸入合法網域名稱（如 2244526.myftp.org），留空即停用');
+			return true;
+		};
+		o.rmempty = true;
+		o.description = _('浮動 IP 永久放行：每 10 分鐘解析一次，變了自動換血（UCI＋live 同步），解析失敗沿用舊 IP。');
 
 		o = s.taboption('settings', form.DummyValue, '_sched');
 		o.render = function(section_id) {

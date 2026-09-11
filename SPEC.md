@@ -62,3 +62,12 @@
 - 免封三層：① `192.168.0.0/16` 寫死 DEF ② 保留段 ③ 白名單檔（awk CIDR 成員判斷，rshift 比對）。
 - 前端第三籤「登入防護」：四數字＋兩開關＋封鎖名單＋全部解封；存檔後 reload 服務。
 - 遷移：`41-luci-app-countryallow-ban` 停舊 loop、清 rc.local、舊檔改 `.bak`。
+
+## 11. 公司 DDNS 動態白名單（浮動 IP 永久放行）
+- 設定 `company_ddns`（預設 `2244526.myftp.org`，留空停用）；`countryallow-cron`
+  有填才排 `*/10 * * * * /usr/bin/countryallow-ddns`，且同步當下立刻跑一次。
+- `/usr/bin/countryallow-ddns`：nslookup 取第一個公網 IPv4（濾掉私網／127，失敗沿用舊的）；
+  與 `/etc/luci-uploads/company-ddns.ip` 比對，無變動靜默退出。
+- 變了才換血：UCI 白名單刪舊加新（用戶手寫的一律保留）＋ live 兩集合先加新再刪舊
+  （零空窗）；寫 history.log。
+- 每日更新從 UCI 重蓋檔案，自然包含公司 IP；重開機靠檔案＋10 分鐘內 cron 補齊。

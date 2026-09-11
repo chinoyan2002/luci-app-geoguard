@@ -1,0 +1,52 @@
+#!/bin/sh
+# countryallow-ddns: 公司 DDNS 動態白名單（浮動 IP 永久放行）
+# 每 10 分鐘由 cron 呼叫；解析 company_ddns，變了才動：
+#   UCI 白名單換血（刪舊加新）＋ live set 即時換血（刪舊加新）
+# 解析失敗／CIDR 私有／無變動 → 靜默退出（沿用舊 IP）
+BASE_DIR="/etc/luci-uploads"
+STATE="$BASE_DIR/company-ddns.ip"
+
+HOST=$(uci -q get countryallow.main.company_ddns 2>/dev/null)
+[ -z "$HOST" ] && exit 0
+
+IP=$(nslookup "$HOST" 2>/dev/null \
+  | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}' \
+  | grep -vE '^(127\.|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)' \
+  | head -n 1)
+echo "$IP" | grep -qE '^([0-9]{1,3}\.){3}[0-9]{1,3}$' \
+  || { logger -t countryallow-ddns "resolve fail: $HOST"; exit 0; }
+
+OLD=$(cat "$STATE" 2>/dev/null)
+[ "$IP" = "$OLD" ] && exit 0
+
+SETNAME=$(uci -q get countryallow.main.setname 2>/dev/null)
+echo "$SETNAME" | grep -qE '^[A-Za-z][A-Za-z0-9_-]*$' || SETNAME="allowed-IPList"
+WHITENAME=$(uci -q get countryallow.main.white_name 2>/dev/null)
+echo "$WHITENAME" | grep -qE '^[A-Za-z][A-Za-z0-9_-]*$' || WHITENAME="CustomAllow"
+
+# UCI 白名單換血（只動舊 DDNS IP，用戶手寫的一律保留）
+WL=$(uci -q get countryallow.main.whitelist 2>/dev/null)
+uci delete countryallow.main.whitelist 2>/dev/null
+for w in $WL; do
+  [ -z "$w" ] && continue
+  [ -n "$OLD" ] && [ "$w" = "$OLD" ] && continue
+  [ "$w" = "$IP" ] && continue
+  uci add_list countryallow.main.whitelist="$w"
+done
+uci add_list countryallow.main.whitelist="$IP"
+uci commit countryallow
+
+echo "$IP" > "$STATE"
+
+# live set 換血（新舊並存空窗零秒：先加新再刪舊）
+for nm in "$SETNAME" "$WHITENAME"; do
+  if nft list set inet fw4 "$nm" >/dev/null 2>&1; then
+    nft add element inet fw4 "$nm" "{ $IP }" 2>/dev/null
+    [ -n "$OLD" ] && nft delete element inet fw4 "$nm" "{ $OLD }" 2>/dev/null
+  fi
+done
+
+logger -t countryallow-ddns "company $HOST: ${OLD:-none} -> $IP"
+echo "$(date '+%F %T')|ddns|$HOST ${OLD:-none} -> $IP" >> "$BASE_DIR/history.log"
+tail -n 200 "$BASE_DIR/history.log" > "$BASE_DIR/.hist.tmp" 2>/dev/null \
+  && mv "$BASE_DIR/.hist.tmp" "$BASE_DIR/history.log"

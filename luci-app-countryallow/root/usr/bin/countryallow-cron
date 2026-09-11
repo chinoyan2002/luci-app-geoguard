@@ -4,6 +4,13 @@ CRON_FILE="/etc/crontabs/root"
 JOB="/usr/bin/countryallow-update"
 
 sed -i '\#countryallow-update#d' "$CRON_FILE" 2>/dev/null
+sed -i '\#countryallow-ddns#d' "$CRON_FILE" 2>/dev/null
+
+# 公司 DDNS 動態白名單：有填才排，每 10 分鐘跟一次，存檔立刻跑一次即生效
+if [ -n "$(uci -q get countryallow.main.company_ddns 2>/dev/null)" ]; then
+	echo "*/10 * * * * /usr/bin/countryallow-ddns" >> "$CRON_FILE"
+	/usr/bin/countryallow-ddns
+fi
 
 if [ "$(uci -q get countryallow.main.auto_update)" = "1" ]; then
 	FREQ=$(uci -q get countryallow.main.update_freq 2>/dev/null)
