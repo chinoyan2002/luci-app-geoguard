@@ -1,0 +1,20 @@
+#!/bin/sh
+# countryallow-ban-status: 防護頁狀態輸出（封鎖名單＋服務狀態）
+SET=ban_luci
+if nft list set inet fw4 $SET 2>/dev/null | grep -q 'timeout'; then
+  echo "== 目前封鎖 =="
+  nft list set inet fw4 $SET 2>/dev/null | tr ',' '\n' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+ timeout [0-9a-z]+ expires [0-9a-zms.]+' || echo "（無）"
+else
+  echo "== 目前封鎖 =="
+  echo "（集合不存在：防護鏈未載入）"
+fi
+echo "== 服務 =="
+if ps 2>/dev/null | grep -q '[c]ountryallow-ban' || /etc/init.d/luci-ban running 2>/dev/null | grep -q running; then
+  echo "luci-ban：執行中"
+else
+  echo "luci-ban：未執行"
+fi
+echo "== 參數 =="
+for k in ban_enabled ban_maxretry ban_findtime ban_bantime ban_web ban_ssh; do
+  echo "$k=$(uci get countryallow.main.$k 2>/dev/null)"
+done

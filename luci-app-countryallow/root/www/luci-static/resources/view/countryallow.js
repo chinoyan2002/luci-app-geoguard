@@ -155,6 +155,11 @@ return view.extend({
 				return (res.code === 0 && res.stdout) ? res.stdout.trim() : '';
 			}).catch(function() {
 				return '';
+			}),
+			fs.exec('/usr/bin/countryallow-ban-status').then(function(res) {
+				return (res.code === 0 && res.stdout) ? res.stdout : '';
+			}).catch(function() {
+				return '';
 			})
 		]);
 	},
@@ -163,6 +168,8 @@ return view.extend({
 		var m, s, o;
 		var logText = data[1] || '';
 		var countsText = data[2] || '';
+		var banText = data[3] || '';
+		var banPre = null;
 
 		var countsLine = function() {
 			var p = (countsText || '').split(/\s+/);
@@ -191,6 +198,7 @@ return view.extend({
 		s.anonymous = true;
 		s.tab('settings', _('設定'));
 		s.tab('log', _('記錄'));
+		s.tab('ban', _('登入防護'));
 
 		o = s.taboption('settings', form.DummyValue, '_countries');
 		o.render = function(section_id) {
@@ -549,6 +557,88 @@ return view.extend({
 				});
 			});
 			return E('div', {}, [clr, pre]);
+		};
+
+		/* ---- 登入防護籤（獨立區塊：只共用 tab 殼，後端走 countryallow-ban*） ---- */
+		o = s.taboption('ban', form.Flag, 'ban_enabled', _('啟用登入防護'));
+		o.default = '1';
+		o.rmempty = false;
+		o.description = _('關閉即停掉防護服務，已封鎖的不自動解封。');
+
+		var banNum = function(name, title, min, max, def, desc) {
+			var vo = s.taboption('ban', form.Value, name, _(title));
+			vo.datatype = 'range(' + min + ',' + max + ')';
+			vo.default = String(def);
+			vo.rmempty = false;
+			vo.description = _(desc);
+			return vo;
+		};
+		banNum('ban_maxretry', _('失敗幾次封鎖'), 1, 100, 8, _('同一 IP 在時間窗內失敗達此次數即封鎖。'));
+		banNum('ban_findtime', _('時間窗（分鐘）'), 1, 60, 5, _('往回看幾分鐘的日誌。'));
+		banNum('ban_bantime', _('封鎖多久（小時）'), 1, 72, 2, _('到期 nft 自動解封。'));
+		o = s.taboption('ban', form.Flag, 'ban_web', _('看守 LuCI 網頁登入'));
+		o.default = '1';
+		o.rmempty = false;
+		o = s.taboption('ban', form.Flag, 'ban_ssh', _('看守 SSH 登入'));
+		o.default = '1';
+		o.rmempty = false;
+		o.description = _('白名單三層永遠免封：192.168.0.0/16 寫死＋保留段＋白名單集合。');
+
+		o = s.taboption('ban', form.DummyValue, '_banstatus');
+		o.render = function(section_id) {
+			banPre = E('pre', { 'style': 'white-space:pre-wrap' }, [banText || _('狀態載入中…')]);
+			return E('div', {}, [banPre]);
+		};
+
+		o = s.taboption('ban', form.DummyValue, '_banactions');
+		o.render = function(section_id) {
+			var map = this.map;
+			var refreshBan = function() {
+				return fs.exec('/usr/bin/countryallow-ban-status').then(function(res) {
+					banText = res.stdout || '';
+					if (banPre) {
+						while (banPre.firstChild)
+							banPre.removeChild(banPre.firstChild);
+						banPre.appendChild(document.createTextNode(banText));
+					}
+				}).catch(function() {});
+			};
+			var saveBan = function() {
+				return map.save(null, true).then(function() {
+					return uci.apply();
+				}).then(function() {
+					return fs.exec('/etc/init.d/luci-ban', ['reload']);
+				}).then(function(res) {
+					if (res.code === 0)
+						ui.addNotification(null, E('p', _('防護設定已儲存並重啟')), 'info');
+					else
+						ui.addNotification(null, E('p', _('重啟防護失敗：') + (res.stderr || res.stdout || '')), 'error');
+					return refreshBan();
+				}).catch(function(e) {
+					ui.addNotification(null, E('p', _('執行失敗：') + e.message), 'error');
+				});
+			};
+			var unbanAll = function() {
+				return fs.exec('/usr/bin/countryallow-ban-unban', ['all']).then(function() {
+					ui.addNotification(null, E('p', _('已全部解封')), 'info');
+					return refreshBan();
+				}).catch(function(e) {
+					ui.addNotification(null, E('p', _('執行失敗：') + e.message), 'error');
+				});
+			};
+			var mkb = function(title, fn, cls) {
+				var b = E('button', { 'class': 'btn cbi-button ' + cls, 'style': 'margin-right:0.5em' }, [title]);
+				b.addEventListener('click', function(ev) {
+					if (ev && ev.preventDefault)
+						ev.preventDefault();
+					return fn();
+				});
+				return b;
+			};
+			return E('div', { 'style': 'display:flex;align-items:center;gap:0.5em;flex-wrap:wrap' }, [
+				mkb(_('儲存防護設定並重啟'), saveBan, 'cbi-button-action'),
+				mkb(_('全部解封'), unbanAll, 'cbi-button-neutral')
+			]);
 		};
 
 		return m.render();

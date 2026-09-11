@@ -5,7 +5,7 @@ OpenWrt LuCI App：勾選國家＋白名單 → 抓 CIDR → firewall4 ipset 集
 
 ## Layout
 - `luci-app-countryallow/Makefile` — 標準 luci.mk 包，`LUCI_PKGARCH:=all`，`LUCI_DEPENDS:=+firewall4 +wget-ssl +uhttpd`
-- `luci-app-countryallow/root/` — **原樣對應分享器路徑**（`usr/bin/countryallow-*` 6 支腳本、`www/.../view/countryallow.js` 前端、`etc/config/countryallow` conffile、`etc/uci-defaults/40-*` 初裝只排 cron 不抓檔）
+- `luci-app-countryallow/root/` — **原樣對應分享器路徑**（`usr/bin/countryallow-*` 9 支腳本含 ban 系列、`www/.../view/countryallow.js` 前端三籤、`etc/config/countryallow` conffile、`etc/uci-defaults/40-*` 初裝只排 cron 不抓檔＋`41-*` ban 遷移、`etc/init.d/luci-ban` procd 防護服務、`etc/nftables.d/10-luci-guard.nft` 擋 2222/8080/8081）
 - `tools/luci-harness.js` — 前端唯一測試（mini-DOM：唯讀 children、strict、空陣列 RPC 拒收皆仿真）；`tools/luci-verify.js` — headless 截圖
 - 無 build/CI；`.gitattributes` 鎖 LF；分支 `main`
 
@@ -27,5 +27,5 @@ OpenWrt LuCI App：勾選國家＋白名單 → 抓 CIDR → firewall4 ipset 集
 ## Hard rules (violations broke prod before)
 - fw4：`option ipset` 須配 uci ipset 區段；`fw4 reload` 不重讀 loadfile → 更新腳本一律 flush＋重填 live；勿重複載入 `/etc/nftables.d/`
 - LuCI 25.x：空陣列用 `uci.unset`（`set` 會被 rpcd 打回）；按鈕流程自帶 `uci.apply()`；匿名區段 `@ipset[N]` 下標浮動，刪由大到小
-- BusyBox 無 `paste/pkill/hexdump`；`$$` 在子 shell 是父 pid
-- `/root/luci-ban*`、`/etc/nftables.d/10-luci-guard.nft` 是另一專案，勿動
+- BusyBox 無 `paste/pkill/pgrep/hexdump`；`$$` 在子 shell 是父 pid；awk 的 `END{exit}` 會覆蓋前面的 exit 碼（用 found 旗標）
+- `/root/luci-ban*.bak` 是退役舊版，勿復活；現役是包內的 `countryallow-ban`＋procd `luci-ban`

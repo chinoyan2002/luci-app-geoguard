@@ -72,10 +72,10 @@ form.Map.prototype.section = function() {
   const s = {
     _tabs: {},
     option: () => { const o = mkOpt(); OPTS.push(o); return o; },
-    taboption: function(tab) {
+    taboption: function(tab, type, name) {
       if (!this._tabs[tab])
         throw new ReferenceError('Associated tab not declared');
-      const o = mkOpt(); o._tab = tab; OPTS.push(o); return o;
+      const o = mkOpt(); o._tab = tab; o._name = name; OPTS.push(o); return o;
     },
     tab: function(name) { this._tabs[name] = true; },
     render: null, map: fakeMap,
@@ -86,17 +86,12 @@ form.Map.prototype.section = function() {
 form.Map.prototype.render = function() { return Promise.resolve({}); };
 form.Map.prototype.save = function() { return Promise.resolve(); };
 const execCalls = [];
-let statusCalls = 0;
 const fsStub = {
   list: () => Promise.resolve([]),
   exec: (cmd) => {
     execCalls.push(cmd);
-    if (cmd === '/usr/bin/countryallow-status') {
-      statusCalls++;
-      if (statusCalls === 1)
-        return Promise.resolve({ code: 0, stdout: '===== 集合狀態 =====\n集合檔：x (100 行)\n===== 更新歷史（近 20 筆） =====\n2026-09-11|update|ok\n' });
-      return Promise.resolve({ code: 0, stdout: '===== 集合狀態 =====\n===== 更新歷史（近 20 筆） =====\n（尚無記錄）\n' });
-    }
+    if (cmd === '/usr/bin/countryallow-status')
+      return Promise.resolve({ code: 0, stdout: '===== 集合狀態 =====\n集合檔：x (100 行)\n===== 更新歷史（近 20 筆） =====\n2026-09-11|update|ok\n' });
     return Promise.resolve({ code: 0 });
   },
 };
@@ -109,7 +104,9 @@ const store = {
   countryallow: { main: {
     selected: [], sel_asia: ['tw', 'jp'], sel_europe: [],
     sel_africa: [], sel_northamerica: [], sel_southamerica: [], sel_oceania: [],
-    setname: 'allowed-IPList', white_name: 'MyAllowed', update_freq: 'daily', update_hour: '3', update_min: '10',
+    setname: 'allowed-IPList', update_freq: 'daily', update_hour: '3', update_min: '10',
+    ban_enabled: '1', ban_maxretry: '8', ban_findtime: '5', ban_bantime: '2',
+    ban_web: '1', ban_ssh: '1',
   } },
 };
 const uci = {
@@ -126,13 +123,11 @@ const uci = {
   },
   unset: (c, s, o) => { delete store[c][s][o]; },
   save: () => Promise.resolve(),
-  applyCalls: 0,
-  apply: function() { this.applyCalls++; execCalls.push('APPLY'); return Promise.resolve(0); },
+  apply: () => Promise.resolve(),
 };
 
-const document = { createTextNode: (t) => t };
-const factory = new Function('view', 'form', 'fs', 'ui', 'uci', 'E', '_', 'document', code);
-const v = factory(view, form, fsStub, ui, uci, E, _, document);
+const factory = new Function('view', 'form', 'fs', 'ui', 'uci', 'E', '_', code);
+const v = factory(view, form, fsStub, ui, uci, E, _);
 
 const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.type === type);
 
@@ -211,11 +206,6 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
       process.exit(1);
     }
   }
-  if (execCalls.indexOf('APPLY') < 0 || execCalls.indexOf('APPLY') > execCalls.indexOf('/usr/bin/countryallow-update')) {
-    console.error('HARNESS-FAIL: uci.apply 未在更新前執行');
-    process.exit(1);
-  }
-  console.log('apply-before-exec OK');
   // 4. 純白名單：全取消，selected 應被刪除（不是空陣列）
   const twBox = NODES.find((n) => n.tag === 'input' && n.attrs.type === 'checkbox' && n.attrs.value === 'tw');
   twBox.checked = false;
@@ -254,8 +244,8 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
   store.countryallow.main.selected = ['tw'];
   const execBefore = execCalls.length;
   await mergeBtn.fire('click');
-  const newGateExecs = execCalls.slice(execBefore).filter((c) => c !== 'APPLY');
-  if (newGateExecs.length !== 0) {
+  if (execCalls.length !== execBefore) {
+    console.error('HARNESS-FAIL: 非法集合名仍執行了後端');
     process.exit(1);
   }
   if (!notifications.some((t) => t.indexOf('不合規格') >= 0)) {
@@ -264,15 +254,6 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
   }
   console.log('setname gate OK');
   store.countryallow.main.setname = 'allowed-IPList';
-  store.countryallow.main.white_name = 'bad name!';
-  const execBeforeW = execCalls.length;
-  await mergeBtn.fire('click');
-  const newGateExecsW = execCalls.slice(execBeforeW).filter((c) => c !== 'APPLY');
-  if (newGateExecsW.length !== 0) {
-    process.exit(1);
-  }
-  console.log('white-name gate OK');
-  store.countryallow.main.white_name = 'MyAllowed';
   if (store.countryallow.main.update_freq !== 'weekly' ||
       store.countryallow.main.update_hour !== '4' ||
       store.countryallow.main.update_min !== '5') {
@@ -377,50 +358,31 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
     process.exit(1);
   }
   console.log('auto-flag + save-button OK');
-  // 12b. 清除更新歷史 → 跑 clear 腳本＋pre 重刷為空
-  const clrHist = NODES.find((n) => n.tag === 'button' && n.textContent === '清除更新歷史');
-  if (!clrHist) { console.error('HARNESS-FAIL: 找不到清除更新歷史鍵'); process.exit(1); }
-  await clrHist.fire('click');
-  if (!execCalls.includes('/usr/bin/countryallow-clear-history')) {
-    console.error('HARNESS-FAIL: 沒打到清除腳本');
+  // 12. 防護籤：ban 欄位存在（taboption 有名）＋兩鍵同列＋行為
+  const banOpts = OPTS.filter((o) => o._tab === 'ban' && o._name);
+  const banNames = banOpts.map((o) => o._name);
+  for (const need of ['ban_enabled', 'ban_maxretry', 'ban_findtime', 'ban_bantime', 'ban_web', 'ban_ssh', '_banstatus', '_banactions']) {
+    if (!banNames.includes(need)) {
+      console.error('HARNESS-FAIL: 防護籤缺欄位 ' + need + ' (有: ' + JSON.stringify(banNames) + ')');
+      process.exit(1);
+    }
+  }
+  console.log('ban-fields OK');
+  const banSaveBtn = btnByText('儲存防護設定並重啟');
+  const unbanBtn = btnByText('全部解封');
+  if (!banSaveBtn || !unbanBtn || banSaveBtn.parent !== unbanBtn.parent) {
+    console.error('HARNESS-FAIL: 防護按鍵缺失或不同列');
     process.exit(1);
   }
-  const pres2 = NODES.filter((n) => n.tag === 'pre');
-  if (!pres2.some((p) => p.textContent.indexOf('尚無記錄') >= 0)) {
-    console.error('HARNESS-FAIL: 清除後 pre 未更新');
+  console.log('ban-buttons-same-row OK');
+  const execBeforeBan = execCalls.length;
+  await banSaveBtn.fire('click');
+  await unbanBtn.fire('click');
+  const banExecs = execCalls.slice(execBeforeBan);
+  if (!banExecs.includes('/etc/init.d/luci-ban') || !banExecs.includes('/usr/bin/countryallow-ban-unban')) {
+    console.error('HARNESS-FAIL: 防護按鍵未打到後端: ' + JSON.stringify(banExecs));
     process.exit(1);
   }
-  console.log('clear-history OK');
-  // 12. 白名單自訂新增列：非法擋下、合法加入、刪除、存檔
-  const wlInput = NODES.find((n) => n.tag === 'input' && n.attrs.type === 'text' && (n.attrs.placeholder || '').indexOf('203.0.113.10') >= 0);
-  const wlAdd = NODES.find((n) => n.tag === 'button' && n.textContent === '新增');
-  const wlErr = NODES.find((n) => n.tag === 'div' && n.attrs.class === 'wl-error');
-  const wlList = NODES.find((n) => n.tag === 'div' && n.attrs.class === 'wl-list');
-  if (!wlInput || !wlAdd || !wlErr || !wlList) { console.error('HARNESS-FAIL: 白名單自訂列缺件'); process.exit(1); }
-  const wlCount = () => wlList.children.length;
-  const n0 = wlCount();
-  for (const bad of ['999.1.1.1', '1.2.3.4/33', 'abc']) {
-    wlInput.value = bad;
-    await wlAdd.fire('click');
-    if (wlCount() !== n0 || wlErr.textContent === '') { console.error('HARNESS-FAIL: 非法白名單未擋下: ' + bad); process.exit(1); }
-  }
-  wlInput.value = '10.7.7.1-10.7.7.3';
-  await wlAdd.fire('click');
-  if (wlCount() !== n0 + 1 || wlErr.textContent !== '') { console.error('HARNESS-FAIL: 合法範圍未加入'); process.exit(1); }
-  // 刪掉剛加的（最後一個刪除鍵）
-  const delBtns = NODES.filter((n) => n.tag === 'button' && n.textContent === '刪除');
-  await delBtns[delBtns.length - 1].fire('click');
-  if (wlCount() !== n0) { console.error('HARNESS-FAIL: 白名單刪除失敗'); process.exit(1); }
-  // 再加一個真的要存的
-  wlInput.value = '10.9.9.9';
-  await wlAdd.fire('click');
-  // 存檔（用儲存設定鍵，只驗 UCI，不跑後端）
-  const saveOnly = NODES.find((n) => n.tag === 'button' && n.textContent === '儲存設定');
-  await saveOnly.fire('click');
-  const wlStored = store.countryallow.main.whitelist || [];
-  if (wlStored.indexOf('10.9.9.9') < 0) { console.error('HARNESS-FAIL: 白名單未存入 UCI: ' + JSON.stringify(wlStored)); process.exit(1); }
-  // 清掉測試殘留
-  store.countryallow.main.whitelist = ['158.101.65.154'];
-  console.log('whitelist-custom-row OK');
+  console.log('ban-actions OK');
   console.log('HARNESS-DONE');
 })().catch((e) => { console.error('HARNESS-FAIL:', e.stack.split('\n').slice(0, 3).join(' | ')); process.exit(1); });

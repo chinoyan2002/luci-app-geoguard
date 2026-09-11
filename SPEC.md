@@ -54,4 +54,11 @@
 
 ## 9. 已知限制
 - IPv4 only；LuCI 防火牆頁無集合欄位，掛規則走 uci；TW/JP 舊系統已退役。
-- ban LuCI（luci-ban）是另一專案，不在本包。
+
+## 10. 登入防護（已併入本包，不再是獨立專案）
+- 後端 `/usr/bin/countryallow-ban`（procd `/etc/init.d/luci-ban` 每 60 秒呼叫）；
+  參數讀 UCI（`ban_enabled/maxretry/findtime/bantime/web/ssh`，預設 1/8/5分/2時/開/開）。
+- 網頁＋SSH 分開計數，共用 `ban_luci`；Guard 鏈擋 `2222/8080/8081`。
+- 免封三層：① `192.168.0.0/16` 寫死 DEF ② 保留段 ③ 白名單檔（awk CIDR 成員判斷，rshift 比對）。
+- 前端第三籤「登入防護」：四數字＋兩開關＋封鎖名單＋全部解封；存檔後 reload 服務。
+- 遷移：`41-luci-app-countryallow-ban` 停舊 loop、清 rc.local、舊檔改 `.bak`。

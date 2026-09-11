@@ -1,0 +1,78 @@
+#!/bin/sh
+# countryallow-ban: LuCI + SSH 登入防爆破（5 分鐘窗預設，可配）
+# 參數全讀 UCI（countryallow.main.ban_*），缺值用 DEF
+# 白名單三層：① 192.168.0.0/16 永久寫死 ② 迴環/保留段 ③ CustomAllow 白名單檔
+# 由 /etc/init.d/luci-ban（procd）每 60 秒呼叫一次
+SET=ban_luci
+CFG=countryallow
+nft list set inet fw4 $SET >/dev/null 2>&1 || exit 0
+
+g() { uci get $CFG.main."$1" 2>/dev/null; }
+num() { case "$1" in ''|*[!0-9]*) echo "$2" ;; *) echo "$1" ;; esac; }
+
+EN=$(g ban_enabled); [ -z "$EN" ] && EN=1
+[ "$EN" = "0" ] && exit 0
+MAX=$(num "$(g ban_maxretry)" 8)
+FIND=$(num "$(g ban_findtime)" 5)
+BANH=$(num "$(g ban_bantime)" 2)
+WEB=$(g ban_web); [ -z "$WEB" ] && WEB=1
+SSHO=$(g ban_ssh); [ -z "$SSHO" ] && SSHO=1
+WHITE=$(g white_name); [ -z "$WHITE" ] && WHITE=CustomAllow
+WLFILE="/etc/luci-uploads/$WHITE.cidr"
+
+# N 分鐘時間窗
+WIN=/tmp/countryallow-ban-window
+: > "$WIN"
+i=0
+while [ $i -lt "$FIND" ]; do
+  T=$(date -d "@$(( $(date +%s) - i * 60 ))" '+%b %e %H:%M' 2>/dev/null | tr -s ' ')
+  [ -n "$T" ] && echo "$T" >> "$WIN"
+  i=$((i + 1))
+done
+[ -s "$WIN" ] || exit 0
+
+in_whitelist() {
+  [ -f "$WLFILE" ] || return 1
+  awk -v ip="$1" '
+  function i2n(a, p, n) { n = split(a, p, "."); return p[1]*16777216+p[2]*65536+p[3]*256+p[4]; }
+  BEGIN { needle = i2n(ip); }
+  { line = $1;
+    if (line ~ /\//) { split(line, a, "/"); b = i2n(a[1]); m = a[2]+0;
+      if (m == 0) { found = 1; exit; }
+      if (rshift(needle, 32-m) == rshift(b, 32-m)) { found = 1; exit; } }
+    else if (line == ip) { found = 1; exit; } }
+  END { exit (found ? 0 : 1); }' "$WLFILE"
+}
+
+ban_ip() {
+  ip="$1"; tag="$2"
+  # DEF 永久白名單：內網 192.168.0.0/16（寫死，不可被 UCI 覆蓋）
+  case "$ip" in
+    192.168.*) return 0 ;;
+  esac
+  case "$ip" in
+    127.*|10.*|172.16.*|172.17.*|172.18.*|172.19.*|172.2?.*|172.30.*|172.31.*|0.0.0.0|"") return 0 ;;
+  esac
+  # 白名單檔（CustomAllow：你＋公司）免封
+  in_whitelist "$ip" && return 0
+  if ! nft get element inet fw4 $SET "{ $ip }" >/dev/null 2>&1; then
+    nft add element inet fw4 $SET "{ $ip timeout ${BANH}h }" \
+      && logger -t countryallow-ban "banned $ip for ${BANH}h ($tag brute force)"
+  fi
+}
+
+LOG=$(logread 2>/dev/null | tr -s ' ')
+
+if [ "$WEB" = "1" ]; then
+  echo "$LOG" | grep 'failed login' | grep -F -f "$WIN" \
+    | sed -n 's/.* from \([0-9][0-9.]*\)[^0-9.]*$/\1/p' \
+    | sort | uniq -c | awk -v max="$MAX" '$1>=max{print $2}' \
+    | while read -r ip; do ban_ip "$ip" "LuCI"; done
+fi
+
+if [ "$SSHO" = "1" ]; then
+  echo "$LOG" | grep -E 'bad password attempt|Login attempt for nonexistent' | grep -F -f "$WIN" \
+    | sed -n 's/.* from \([0-9][0-9.]*\)[: ].*$/\1/p' \
+    | sort | uniq -c | awk -v max="$MAX" '$1>=max{print $2}' \
+    | while read -r ip; do ban_ip "$ip" "SSH"; done
+fi
