@@ -1,0 +1,234 @@
+# geoguard translation template
+msgid ""
+msgstr ""
+"Project-Id-Version: luci-app-geoguard 2.0.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "格式錯誤：請輸入單一 IP（如 203.0.113.10）、CIDR（如 203.0.113.0/24）或範圍（如 203.0.113.10-203.0.113.50）"
+msgstr ""
+
+msgid "目前啟用的集合：尚無資料"
+msgstr ""
+
+msgid "目前啟用：%s.cidr（%s 行／live %s 段／更新於 %s）"
+msgstr ""
+
+msgid "國門守衛 GeoGuard Ver:"
+msgstr ""
+
+msgid "勾選國家＋白名單 IP，合併成集合檔。本頁只生產 IP 集合，不動防火牆。"
+msgstr ""
+
+msgid "設定"
+msgstr ""
+
+msgid "登入防護"
+msgstr ""
+
+msgid "IPs 設定"
+msgstr ""
+
+msgid "記錄"
+msgstr ""
+
+msgid "已勾選："
+msgstr ""
+
+msgid "（尚未勾選）"
+msgstr ""
+
+msgid "搜尋，如 TW 台灣 TAIWAN"
+msgstr ""
+
+msgid "清除"
+msgstr ""
+
+msgid "全選"
+msgstr ""
+
+msgid "清除已選"
+msgstr ""
+
+msgid "編碼"
+msgstr ""
+
+msgid "位置"
+msgstr ""
+
+msgid "選擇國家"
+msgstr ""
+
+msgid "刪除"
+msgstr ""
+
+msgid "新增"
+msgstr ""
+
+msgid "除國家外要包含的 白名單：IP / CIDR / 範圍"
+msgstr ""
+
+msgid "格式：單一 IP、CIDR、A-B 範圍。國家全空＋有 IP＝純白名單。"
+msgstr ""
+
+msgid "主要訂閱源"
+msgstr ""
+
+msgid "{cc} 會換成國碼小寫，{CC} 大寫。"
+msgstr ""
+
+msgid "備用訂閱源"
+msgstr ""
+
+msgid "失敗改抓備用；抓不到沿用舊檔。"
+msgstr ""
+
+msgid "多國家+自訂白名單IP的總集合名稱"
+msgstr ""
+
+msgid "只允許英文開頭，後接英文數字底線連字號"
+msgstr ""
+
+msgid "規則：英文開頭，僅英文數字底線連字號。檔名與 set 同名；改名舊檔保留。"
+msgstr ""
+
+msgid "白名單集合名稱"
+msgstr ""
+
+msgid "白名單獨立成一個集合，防火牆 IP 集合頁可見，規則同上。"
+msgstr ""
+
+msgid "每天"
+msgstr ""
+
+msgid "每週日"
+msgstr ""
+
+msgid "每月 1 日"
+msgstr ""
+
+msgid "自動更新清單頻率"
+msgstr ""
+
+msgid "時"
+msgstr ""
+
+msgid "分"
+msgstr ""
+
+msgid "啟用自動更新"
+msgstr ""
+
+msgid "本頁只負責產生 IP 集合檔，不動防火牆任何規則。"
+msgstr ""
+
+msgid "生效方式：網路→防火牆→連接埠轉發→新增→進階設定→IPSet 下拉選集合，存檔套用。"
+msgstr ""
+
+msgid "備用（SSH）：uci set firewall.@redirect[N].ipset＝集合名稱，commit 後 fw4 reload。"
+msgstr ""
+
+msgid "集合名稱不合規格（英文字母開頭，僅英文數字底線連字號），設定已存檔但不會執行更新"
+msgstr ""
+
+msgid "更新失敗：%s"
+msgstr ""
+
+msgid "未知錯誤"
+msgstr ""
+
+msgid "執行失敗：%s"
+msgstr ""
+
+msgid "立即更新 IP 集合"
+msgstr ""
+
+msgid "立即更新並合併"
+msgstr ""
+
+msgid "儲存設定"
+msgstr ""
+
+msgid "清除更新歷史"
+msgstr ""
+
+msgid "更新歷史已清除"
+msgstr ""
+
+msgid "啟用登入防護"
+msgstr ""
+
+msgid "關閉即停掉防護服務，已封鎖的不自動解封。"
+msgstr ""
+
+msgid "失敗幾次封鎖"
+msgstr ""
+
+msgid "時間窗（分鐘）"
+msgstr ""
+
+msgid "封鎖多久（小時）"
+msgstr ""
+
+msgid "防護 LuCI 網頁登入"
+msgstr ""
+
+msgid "防護 SSH 登入"
+msgstr ""
+
+msgid "永久免封清單"
+msgstr ""
+
+msgid "請輸入 IP 或 CIDR（如 192.168.0.0/16）"
+msgstr ""
+
+msgid "此清單內的 IP／網段永久免於封鎖。系統預設已含保留位址與內網段。另有兩類自動免封，無需在此重複填寫：IP 白名單（IPs 設定籤）與 DDNS 白名單（本籤下方），後者 IP 變動時自動跟隨。"
+msgstr ""
+
+msgid "DDNS 白名單清單"
+msgstr ""
+
+msgid "請輸入合法網域名稱（如 home.example.org）"
+msgstr ""
+
+msgid "可新增多筆；每筆獨立追 IP。本清單只適用防護免封，不動 IP 集合。"
+msgstr ""
+
+msgid "DDNS 檢查間隔（分鐘）"
+msgstr ""
+
+msgid "巡邏間隔（秒）"
+msgstr ""
+
+msgid "外網介面（自動偵測）"
+msgstr ""
+
+msgid "介面名稱格式錯誤"
+msgstr ""
+
+msgid "留空自動偵測（firewall wan 區→系統→預設路由）。只有自動偵測失靈才手填（如 pppoe-wan）。"
+msgstr ""
+
+msgid "被封鎖＝整台對他消失：外網進來的所有封包（所有 port、TCP/UDP/ICMP）在源頭全丟，%s 小時自動解封。"
+msgstr ""
+
+msgid "狀態載入中…"
+msgstr ""
+
+msgid "防護設定已儲存並重啟"
+msgstr ""
+
+msgid "重啟防護失敗：%s"
+msgstr ""
+
+msgid "已全部解封"
+msgstr ""
+
+msgid "儲存防護設定並重啟"
+msgstr ""
+
+msgid "全部解封"
+msgstr ""
+
+msgid "GeoGuard"
+msgstr ""
+

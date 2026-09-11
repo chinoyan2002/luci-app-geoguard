@@ -15,12 +15,12 @@
 - 簽名 key：`root-6aa40cae`，私鑰只在 LXC，公鑰隨包發布（`packages-1.1.0/*.rsa.pub`）
 
 ## 安裝（使用者側）
-- 25.x（apk）：先信任公鑰或 `apk add --allow-untrusted *.apk`；主包＋`luci-i18n-countryallow-en`
-  （英文包可不裝）；語言跟 LuCI 系統走，conffile（`/etc/config/countryallow`、guard）會進
+- 25.x（apk）：先信任公鑰或 `apk add --allow-untrusted *.apk`；主包＋`luci-i18n-geoguard-en`
+  ＋`luci-i18n-geoguard-zh-tw`（語系包可不裝）；語言跟 LuCI 系統走，conffile（`/etc/config/geoguard`、guard）會進
   `.apk-new` 不蓋掉現值
 - 24.x（opkg）：`opkg install *.ipk`（容器／成員／control／755 已對官方包逐欄驗過；
   1.1.0-1 的 ar 版已下架作廢，勿傳）
 
 ## control 模板（opkg）
-見 `luci-app-countryallow` Makefile 的 Depends/Description；`CONTROL/control` 由產線腳本生成，
+見 `luci-app-geoguard` Makefile 的 Depends/Description；`CONTROL/control` 由產線腳本生成，
 改版記得同步 Version。

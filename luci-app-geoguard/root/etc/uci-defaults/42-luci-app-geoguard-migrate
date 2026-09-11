@@ -1,0 +1,52 @@
+#!/bin/sh
+# 42-luci-app-geoguard-migrate: countryallow v1.x -> geoguard v2 一次性遷移
+# 無舊版直接退出；已遷移直接退出；開機跑也安全
+OLD_CFG=/etc/config/countryallow
+NEW_CFG=/etc/config/geoguard
+[ -f "$OLD_CFG" ] || exit 0
+[ -f "$NEW_CFG" ] && exit 0
+
+# 1. 設定搬家（值全留，區段型別改名）
+cp "$OLD_CFG" "$NEW_CFG"
+sed -i 's/^config countryallow/config geoguard/' "$NEW_CFG"
+mv "$OLD_CFG" "$OLD_CFG.v1bak"
+
+# 2. 排程換手（舊行刪，新行由 geoguard-cron 重建）
+sed -i '\#countryallow-update#d' /etc/crontabs/root 2>/dev/null
+sed -i '\#countryallow-ddns#d' /etc/crontabs/root 2>/dev/null
+/usr/bin/geoguard-cron 2>/dev/null
+
+# 3. 舊服務下線（殘留 loop 也掃掉）
+/etc/init.d/luci-ban stop 2>/dev/null
+/etc/init.d/luci-ban disable 2>/dev/null
+if [ -f /var/run/luci-ban-loop.pid ]; then
+  oldpid=$(cat /var/run/luci-ban-loop.pid 2>/dev/null)
+  [ -n "$oldpid" ] && kill "$oldpid" 2>/dev/null
+  rm -f /var/run/luci-ban-loop.pid
+fi
+for p in $(ps | grep 'luci-ban-loop.sh' | grep -v grep | awk '{print $1}'); do
+  kill "$p" 2>/dev/null
+done
+
+# 4. 封鎖名單搬家（舊集合→新集合，不斷防護）
+/usr/bin/geoguard-ban-guard 2>/dev/null
+for ip in $(nft list set inet fw4 ban_luci 2>/dev/null | tr ',' '\n' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+ timeout' | awk '{print $1}'); do
+  nft add element inet fw4 geoguard_ban "{ $ip timeout 2h }" 2>/dev/null
+done
+nft flush set inet fw4 ban_luci 2>/dev/null
+# 舊 guard 檔刪掉（跟新檔同名鏈，會打架），再重載一次確保只剩新鏈
+rm -f /etc/nftables.d/10-luci-guard.nft
+/etc/init.d/firewall reload >/dev/null 2>&1
+
+# 5. 新服務上線（執行位全補：包管理器可能洗掉）
+chmod +x /usr/bin/geoguard-ban /usr/bin/geoguard-ban-status /usr/bin/geoguard-ban-unban /usr/bin/geoguard-ban-guard /usr/bin/geoguard-fetch /usr/bin/geoguard-update /usr/bin/geoguard-cron /usr/bin/geoguard-ddns /usr/bin/geoguard-status /usr/bin/geoguard-counts /usr/bin/geoguard-clear-history /etc/init.d/geoguard-ban /etc/uci-defaults/42-luci-app-geoguard-migrate
+/etc/init.d/geoguard-ban enable 2>/dev/null
+/etc/init.d/geoguard-ban start 2>/dev/null
+
+# 6. 舊 UI 立刻下架（選單不雙胞；舊腳本等 apk del 清）
+rm -f /www/luci-static/resources/view/countryallow.js
+rm -f /usr/share/luci/menu.d/luci-app-countryallow.json
+rm -f /usr/share/rpcd/acl.d/luci-app-countryallow.json
+
+logger -t geoguard "migrated from countryallow v1"
+exit 0

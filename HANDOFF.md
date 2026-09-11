@@ -1,4 +1,5 @@
 # 交接書 HANDOFF（給下一個 AI：開工前 15 分鐘照著做）
+> **v2.0.0 改名**：本專案已從 `geoguard`／「國門守衛 GeoGuard」改名為 `geoguard`／「國門守衛 GeoGuard」。下文歷史段落中的舊名皆指同一套東西。
 
 ## 0. 先讀什麼（順序）
 1. `AGENTS.md`（本 repo 的 agent 指令總綱，最精簡）
@@ -11,7 +12,7 @@
 | 角色 | 位置／帳號 | 備註 |
 |---|---|---|
 | 工作 PC | `C:\Users\User\Documents\路由設定檔\` | 本目錄；`2329225-OpenWrtX86-HOME/` 是備份區 |
-| 本專案 | `.../國家IPS集合建立器/`（git repo，見 §5） | 改這裡，不動備份區 |
+| 本專案 | `.../國門守衛 GeoGuard/`（git repo，見 §5） | 改這裡，不動備份區 |
 | PVE | `root@192.168.1.250`（key：`E:\Temp\opencode\pve_temp_readonly`） | 跳板＋快照，VMID 100＝OpenWrt |
 | OpenWrt | `root@192.168.1.1:2222`（經 PVE 跳，Windows 直連 key 已失效） | 25.12.5，PPPoE 撥號 |
 | DSM | `chinoyan@192.168.1.2:2244`＋sudo（經 PVE 跳） | 日誌轉發目的地，本專案只讀它 |
@@ -32,13 +33,13 @@ ssh -i E:\Temp\opencode\pve_temp_readonly -o BatchMode=yes root@192.168.1.250 "h
 # ④ 四集合 live 數量（tw~700、jp~3000、allowed-IPList~1400-3900、CustomAllow 看白名單）
 # ⑤ 防火牆 6 規則綁 allowed-IPList（見 RUNBOOK）
 ```
-LuCI：`http://192.168.1.1` → 網路 → Country Allow List（帳密問使用者；改完 UI 一定自己截圖看，見 RUNBOOK §驗證）。
+LuCI：`http://192.168.1.1` → 網路 → GeoGuard（帳密問使用者；改完 UI 一定自己截圖看，見 RUNBOOK §驗證）。
 
 ## 4. 線上快照（2026-09-11 夜，用戶持續在玩，動手前先重查一次）
 - OpenWrt 25.12.5（x86/64，BIOS，ext4）；PPPoE（`/etc/ppp/options` 必有 `noipv6`，否則被機房秒斷）。
 - 集合：tw、jp、allowed-IPList（合併）、CustomAllow（白名單，空時不存在）。
 - 6 規則吃 allowed-IPList：SSH-2222、8080、8081、8006、88、12290。
-- cron：每天 03:10 更新；每分鐘 luci-ban 迴圈（另一專案）；每週一 03:00 舊 updater 已退役。
+- cron：每天 03:10 更新；每分鐘 geoguard-ban 迴圈（另一專案）；每週一 03:00 舊 updater 已退役。
 - PVE 快照：`pre-2512`、`post-country-v5`（動防火牆/升級前先打新的）。
 
 ## 5. 版本控制

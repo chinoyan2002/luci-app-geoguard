@@ -1,11 +1,12 @@
-# AGENTS.md — 國家IPS集合建立器 (luci-app-countryallow)
+# AGENTS.md — 國門守衛 GeoGuard (luci-app-geoguard)
+> **v2.0.0 改名**：本專案已從 `geoguard`／「國門守衛 GeoGuard」改名為 `geoguard`／「國門守衛 GeoGuard」。下文歷史段落中的舊名皆指同一套東西。
 
 OpenWrt LuCI App：勾選國家＋白名單 → 抓 CIDR → firewall4 ipset 集合。IPv4 only。
 詳規格看 `SPEC.md`；上工流程看 `HANDOFF.md`；指令看 `RUNBOOK.md`；地雷看 `PITFALLS.md`。
 
 ## Layout
-- `luci-app-countryallow/Makefile` — 標準 luci.mk 包，`LUCI_PKGARCH:=all`，`LUCI_DEPENDS:=+firewall4 +wget-ssl +uhttpd`
-- `luci-app-countryallow/root/` — **原樣對應分享器路徑**（`usr/bin/countryallow-*` 9 支腳本含 ban 系列、`www/.../view/countryallow.js` 前端三籤、`etc/config/countryallow` conffile、`etc/uci-defaults/40-*` 初裝只排 cron 不抓檔＋`41-*` ban 遷移、`etc/init.d/luci-ban` procd 防護服務、`etc/nftables.d/10-luci-guard.nft` 擋 2222/8080/8081）
+- `luci-app-geoguard/Makefile` — 標準 luci.mk 包，`LUCI_PKGARCH:=all`，`LUCI_DEPENDS:=+firewall4 +wget-ssl +uhttpd`
+- `luci-app-geoguard/root/` — **原樣對應分享器路徑**（`usr/bin/geoguard-*` 9 支腳本含 ban 系列、`www/.../view/geoguard.js` 前端三籤、`etc/config/geoguard` conffile、`etc/uci-defaults/40-*` 初裝只排 cron 不抓檔＋`41-*` ban 遷移、`etc/init.d/geoguard-ban` procd 防護服務、`etc/nftables.d/10-luci-guard.nft` 擋 2222/8080/8081）
 - `tools/luci-harness.js` — 前端唯一測試（mini-DOM：唯讀 children、strict、空陣列 RPC 拒收皆仿真）；`tools/luci-verify.js` — headless 截圖
 - 無 build/CI；`.gitattributes` 鎖 LF；分支 `main`
 
@@ -16,7 +17,7 @@ OpenWrt LuCI App：勾選國家＋白名單 → 抓 CIDR → firewall4 ipset 集
 
 ## Workflow (order matters)
 1. 改 `.js` → `node --check` → `node tools/luci-harness.js` 全綠；改 `.sh` → 零 CR (`grep -c $'\r'` 須為 0) → `sh -n` 本機＋目的端各一次
-2. scp 上線 → 線上跑一次 → `logread | grep countryallow`＋`nft list set` 對數 → headless 截圖親眼看
+2. scp 上線 → 線上跑一次 → `logread | grep geoguard`＋`nft list set` 對數 → headless 截圖親眼看
 3. 備份到 `../2329225-OpenWrtX86-HOME/`（檔名帶日期版本）；改防火牆／升級前 PVE 先 `qm snapshot 100 <名>`
 4. commit 逐檔 `add`（禁 `add .`），push 前掃機密（密碼/key/token/sessionid 不進 repo）
 
@@ -28,4 +29,4 @@ OpenWrt LuCI App：勾選國家＋白名單 → 抓 CIDR → firewall4 ipset 集
 - fw4：`option ipset` 須配 uci ipset 區段；`fw4 reload` 不重讀 loadfile → 更新腳本一律 flush＋重填 live；勿重複載入 `/etc/nftables.d/`
 - LuCI 25.x：空陣列用 `uci.unset`（`set` 會被 rpcd 打回）；按鈕流程自帶 `uci.apply()`；匿名區段 `@ipset[N]` 下標浮動，刪由大到小
 - BusyBox 無 `paste/pkill/pgrep/hexdump`；`$$` 在子 shell 是父 pid；awk 的 `END{exit}` 會覆蓋前面的 exit 碼（用 found 旗標）
-- `/root/luci-ban*.bak` 是退役舊版，勿復活；現役是包內的 `countryallow-ban`＋procd `luci-ban`
+- `/root/geoguard-ban*.bak` 是退役舊版，勿復活；現役是包內的 `geoguard-ban`＋procd `geoguard-ban`

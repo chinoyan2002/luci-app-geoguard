@@ -1,25 +1,33 @@
 # Maintainer: chinoyan <chinoyan2002@users.noreply.github.com>
-pkgname=luci-app-countryallow
-pkgver=1.1.0
+pkgname=luci-app-geoguard
+pkgver=2.0.0
 pkgrel=1
-pkgdesc="Country-based IPv4 allow-list sets for firewall4 (LuCI)"
-url="https://github.com/chinoyan2002/Openwrt--IPS-"
+pkgdesc="GeoGuard - country allow-list IPS with login guard for firewall4 (LuCI)"
+url="https://github.com/chinoyan2002/luci-app-geoguard"
 arch="noarch"
 license="MIT"
 depends="firewall4 wget-ssl uhttpd"
 source="payload.tar.gz"
 options="!strip !check"
-subpackages="luci-i18n-countryallow-en:i18n_en"
+subpackages="luci-i18n-geoguard-en:i18n_en luci-i18n-geoguard-zh-tw:i18n_zhtw"
 
 package() {
 	mkdir -p "$pkgdir"
-	cp -a "$srcdir"/luci-app-countryallow_1.1.0/* "$pkgdir"/
+	cp -a "$srcdir"/luci-app-geoguard_2.0.0/* "$pkgdir"/
 }
 
 i18n_en() {
-	pkgdesc="English translation for luci-app-countryallow"
-	depends="luci-app-countryallow"
+	pkgdesc="English translation for luci-app-geoguard"
+	depends="luci-app-geoguard"
 	mkdir -p "$subpkgdir"/usr/lib/lua/luci/i18n
-	mv "$pkgdir"/usr/lib/lua/luci/i18n/countryallow.en.lmo \
+	mv "$pkgdir"/usr/lib/lua/luci/i18n/geoguard.en.lmo \
+		"$subpkgdir"/usr/lib/lua/luci/i18n/
+}
+
+i18n_zhtw() {
+	pkgdesc="Traditional Chinese (Taiwan) translation for luci-app-geoguard"
+	depends="luci-app-geoguard"
+	mkdir -p "$subpkgdir"/usr/lib/lua/luci/i18n
+	mv "$pkgdir"/usr/lib/lua/luci/i18n/geoguard.zh-tw.lmo \
 		"$subpkgdir"/usr/lib/lua/luci/i18n/
 }

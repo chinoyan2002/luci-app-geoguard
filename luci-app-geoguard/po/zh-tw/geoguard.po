@@ -1,0 +1,10 @@
+# Traditional Chinese (Taiwan) for luci-app-geoguard
+msgid ""
+msgstr ""
+"Project-Id-Version: luci-app-geoguard 2.0.0\n"
+"Language: zh-tw\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "GeoGuard"
+msgstr "國門守衛 GeoGuard"
+

@@ -99,7 +99,7 @@ const fsStub = {
   list: () => Promise.resolve([]),
   exec: (cmd) => {
     execCalls.push(cmd);
-    if (cmd === '/usr/bin/countryallow-status')
+    if (cmd === '/usr/bin/geoguard-status')
       return Promise.resolve({ code: 0, stdout: '===== 集合狀態 =====\n集合檔：x (100 行)\n===== 更新歷史（近 20 筆） =====\n2026-09-11|update|ok\n' });
     return Promise.resolve({ code: 0 });
   },
@@ -110,7 +110,7 @@ const ui = {
 };
 const notifications = [];
 const store = {
-  countryallow: { main: {
+  geoguard: { main: {
     selected: [], sel_asia: ['tw', 'jp'], sel_europe: [],
     sel_africa: [], sel_northamerica: [], sel_southamerica: [], sel_oceania: [],
     setname: 'allowed-IPList', update_freq: 'daily', update_hour: '3', update_min: '10',
@@ -192,7 +192,7 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
   console.log('buttons-same-row OK');
   await mergeBtn.fire('click');
 
-  const sel = store.countryallow.main.selected;
+  const sel = store.geoguard.main.selected;
   console.log('selected after uncheck jp: ' + JSON.stringify(sel));
   if (sel.length !== 1 || sel[0] !== 'tw') {
     console.error('HARNESS-FAIL: 存檔內容錯誤');
@@ -205,11 +205,11 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
     process.exit(1);
   }
   console.log('selected line OK');
-  if ((store.countryallow.main.sel_asia || []).length !== 0) {
+  if ((store.geoguard.main.sel_asia || []).length !== 0) {
     console.error('HARNESS-FAIL: 舊 sel_asia 未清空');
     process.exit(1);
   }
-  for (const need of ['/usr/bin/countryallow-update', '/usr/bin/countryallow-cron']) {
+  for (const need of ['/usr/bin/geoguard-update', '/usr/bin/geoguard-cron']) {
     if (!execCalls.includes(need)) {
       console.error('HARNESS-FAIL: 沒打到 ' + need);
       process.exit(1);
@@ -221,8 +221,8 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
   await twBox.fire('change');
   const fetchBtn = NODES.find((n) => n.tag === 'button' && n.textContent === '立即更新 IP 集合');
   await fetchBtn.fire('click');
-  if ('selected' in store.countryallow.main) {
-    console.error('HARNESS-FAIL: 全空時 selected 應刪除，實際 ' + JSON.stringify(store.countryallow.main.selected));
+  if ('selected' in store.geoguard.main) {
+    console.error('HARNESS-FAIL: 全空時 selected 應刪除，實際 ' + JSON.stringify(store.geoguard.main.selected));
     process.exit(1);
   }
   console.log('pure-whitelist (empty selected) OK');
@@ -249,8 +249,8 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
   otherSels[1].value = '5';
   await otherSels[1].fire('change');
   // 7. 集合名非法 → 按鈕應擋下（不打 update），且有錯誤通知
-  store.countryallow.main.setname = 'bad name!';
-  store.countryallow.main.selected = ['tw'];
+  store.geoguard.main.setname = 'bad name!';
+  store.geoguard.main.selected = ['tw'];
   const execBefore = execCalls.length;
   await mergeBtn.fire('click');
   if (execCalls.length !== execBefore) {
@@ -262,14 +262,14 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
     process.exit(1);
   }
   console.log('setname gate OK');
-  store.countryallow.main.setname = 'allowed-IPList';
-  if (store.countryallow.main.update_freq !== 'weekly' ||
-      store.countryallow.main.update_hour !== '4' ||
-      store.countryallow.main.update_min !== '5') {
+  store.geoguard.main.setname = 'allowed-IPList';
+  if (store.geoguard.main.update_freq !== 'weekly' ||
+      store.geoguard.main.update_hour !== '4' ||
+      store.geoguard.main.update_min !== '5') {
     console.error('HARNESS-FAIL: 排程未寫入: ' + JSON.stringify({
-      f: store.countryallow.main.update_freq,
-      h: store.countryallow.main.update_hour,
-      m: store.countryallow.main.update_min }));
+      f: store.geoguard.main.update_freq,
+      h: store.geoguard.main.update_hour,
+      m: store.geoguard.main.update_min }));
     process.exit(1);
   }
   console.log('schedule save OK');
@@ -293,14 +293,14 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
   await search.fire('input');
   await selAllBtn.fire('click');
   await mergeBtn.fire('click');
-  if ((store.countryallow.main.selected || []).length !== 217) {
-    console.error('HARNESS-FAIL: 全選後應 217 國，實際 ' + (store.countryallow.main.selected || []).length);
+  if ((store.geoguard.main.selected || []).length !== 217) {
+    console.error('HARNESS-FAIL: 全選後應 217 國，實際 ' + (store.geoguard.main.selected || []).length);
     process.exit(1);
   }
   console.log('select-all OK (217)');
   await selNoneBtn.fire('click');
   await mergeBtn.fire('click');
-  if ('selected' in store.countryallow.main) {
+  if ('selected' in store.geoguard.main) {
     console.error('HARNESS-FAIL: 清除已選後 selected 應消失');
     process.exit(1);
   }
@@ -356,12 +356,12 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
   await autoCb.fire('change');
   const execBeforeSave = execCalls.length;
   try { await saveBtn0.fire('click'); } catch (e) { console.log('SAVE-CLICK-THREW=' + (e && e.message)); }
-  if (store.countryallow.main.auto_update !== '0') {
+  if (store.geoguard.main.auto_update !== '0') {
     console.error('HARNESS-FAIL: auto_update 未寫入 0');
     process.exit(1);
   }
   const newExecs = execCalls.slice(execBeforeSave);
-  if (!newExecs.includes('/usr/bin/countryallow-cron') || newExecs.includes('/usr/bin/countryallow-update')) {
+  if (!newExecs.includes('/usr/bin/geoguard-cron') || newExecs.includes('/usr/bin/geoguard-update')) {
     console.error('HARNESS-FAIL: 儲存設定鍵行為錯誤: ' + JSON.stringify(newExecs));
     process.exit(1);
   }
@@ -444,13 +444,13 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
   await banSaveBtn.fire('click');
   await unbanBtn.fire('click');
   const banExecs = execCalls.slice(execBeforeBan);
-  if (!banExecs.includes('/etc/init.d/luci-ban') || !banExecs.includes('/usr/bin/countryallow-ban-unban') || !banExecs.includes('/usr/bin/countryallow-ban-guard')) {
+  if (!banExecs.includes('/etc/init.d/geoguard-ban') || !banExecs.includes('/usr/bin/geoguard-ban-unban') || !banExecs.includes('/usr/bin/geoguard-ban-guard')) {
     console.error('HARNESS-FAIL: 防護按鍵未打到後端: ' + JSON.stringify(banExecs));
     process.exit(1);
   }
   // pushBan：存檔後 store 應有併列欄位值
   for (const k of ['ban_maxretry', 'ban_findtime', 'ban_bantime', 'ban_web', 'ban_ssh', 'ddns_interval', 'ban_interval']) {
-    if (!(k in store.countryallow.main)) {
+    if (!(k in store.geoguard.main)) {
       console.error('HARNESS-FAIL: pushBan 未寫入 ' + k);
       process.exit(1);
     }

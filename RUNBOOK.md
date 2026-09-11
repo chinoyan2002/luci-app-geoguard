@@ -1,4 +1,5 @@
 # 操作手冊 RUNBOOK（照抄指令，改數字前先看 SPEC）
+> **v2.0.0 改名**：本專案已從 `geoguard`／「國門守衛 GeoGuard」改名為 `geoguard`／「國門守衛 GeoGuard」。下文歷史段落中的舊名皆指同一套東西。
 
 ## 0. 通用鐵律（每次）
 - 傳檔只用 `scp`＋`sha256sum` 來回對（`cat | ssh` 會壓爛中文）。
@@ -10,17 +11,17 @@
 ## 1. LuCI 按鈕 ↔ 後端對照
 | 按鈕 | 實際流程 |
 |---|---|
-| 立即更新 IP 集合 | 存檔→apply→`countryallow-fetch`（只抓各國檔）→同步 cron |
-| 立即更新並合併 | 存檔→apply→`countryallow-fetch`→`countryallow-update`（合併＋區段＋刷新 live）→同步 cron |
+| 立即更新 IP 集合 | 存檔→apply→`geoguard-fetch`（只抓各國檔）→同步 cron |
+| 立即更新並合併 | 存檔→apply→`geoguard-fetch`→`geoguard-update`（合併＋區段＋刷新 live）→同步 cron |
 | 儲存設定 | 存檔→apply→同步 cron（不跑更新） |
 | 清除更新歷史 | 清 `history.log`＋重刷記錄頁 |
 重點：按鈕會自己 `uci.apply()` 落盤，**不用**再去按右上角儲存（以前版本的 bug，已修）。
 
 ## 2. 日常操作
-- 看狀態：LuCI 記錄頁，或 `/usr/bin/countryallow-status`。
+- 看狀態：LuCI 記錄頁，或 `/usr/bin/geoguard-status`。
 - 看某集合 live 數：`nft list set inet fw4 <名> | tr ',' '\n' | grep -c '/'`。
 - 查單 IP 命中：`nft get element inet fw4 <名> { 1.2.3.4 }`（成功＝在內）。
-- 看更新 log：`logread | grep countryallow | tail`；歷史：`/etc/luci-uploads/history.log`。
+- 看更新 log：`logread | grep geoguard | tail`；歷史：`/etc/luci-uploads/history.log`。
 - 加國家：LuCI 勾選→更新並合併（新集合自動建區段＋註解）。
 - 退選國家：同上（區段自動刪＋live 先 flush，不留孤兒）。
 - 白名單：單IP（自動補/32）／CIDR／`A-B` 範圍；全空國家＋有 IP＝純白名單；白名單空→集合不建不留檔。
@@ -37,7 +38,7 @@ uci commit firewall; fw4 reload
 查索引：`uci show firewall | grep -E "name=|ipset="`。注意 `luci-wan` 那條是死的（disabled）別管。
 
 ## 4. 排錯起手式
-- 更新失敗：先看 `logread | grep countryallow`（逐國寫了來源:主要/備用）。
+- 更新失敗：先看 `logread | grep geoguard`（逐國寫了來源:主要/備用）。
 - 集合空白：`ls -la /etc/luci-uploads/*.cidr`＋`nft list set`＋跑一次更新（現在每次更新都重填 live，會自癒）。
 - 頁面空白/怪：先問使用者 Ctrl+F5（快取），再看。
 - PPPoE 斷（NEGOTIATION_FAILED）：先看 `/etc/ppp/options` 有無 `noipv6`（25.x 必備），再看數據機，最後看日誌。

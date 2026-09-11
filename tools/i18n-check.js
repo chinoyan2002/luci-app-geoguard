@@ -4,9 +4,10 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
-const VIEW = path.join(ROOT, 'luci-app-countryallow/root/www/luci-static/resources/view/countryallow.js');
-const MENU = path.join(ROOT, 'luci-app-countryallow/root/usr/share/luci/menu.d/luci-app-countryallow.json');
-const PO = path.join(ROOT, 'luci-app-countryallow/po/en/countryallow.po');
+const VIEW = path.join(ROOT, 'luci-app-geoguard/root/www/luci-static/resources/view/geoguard.js');
+const MENU = path.join(ROOT, 'luci-app-geoguard/root/usr/share/luci/menu.d/luci-app-geoguard.json');
+const PO = path.join(ROOT, 'luci-app-geoguard/po/en/geoguard.po');
+const PO_ZHTW = path.join(ROOT, 'luci-app-geoguard/po/zh-tw/geoguard.po');
 
 let fail = 0;
 const code = fs.readFileSync(VIEW, 'utf8');
@@ -36,6 +37,19 @@ for (const id of srcIds) {
 for (const id of poIds) {
   if (!srcIds.has(id)) { console.error('STALE: ' + id); fail = 1; }
 }
+// zh-tw 只准有源碼存在的 msgid（選單標題這類）
+const zhtw = fs.readFileSync(PO_ZHTW, 'utf8');
+const zhIds = new Set();
+const re3 = /^msgid "((?:[^"\\]|\\.)*)"$/gm;
+let m3;
+let zfirst = true;
+while ((m3 = re3.exec(zhtw)) !== null) {
+  if (zfirst) { zfirst = false; continue; }
+  zhIds.add(m3[1].replace(/\\"/g, '"').replace(/\\\\/g, '\\'));
+}
+for (const id of zhIds) {
+  if (!srcIds.has(id)) { console.error('ZHTW-STALE: ' + id); fail = 1; }
+}
 // 簡體字：只認「簡體專用字」（繁簡共用字不算，避免誤殺時間／實際這類詞）
 const SIMP = '设发护页软网盘让过这进远运优会个义来为无问开关联应应验时現'.replace(/./g, '');
 const SIMP_ONLY = ['设', '发', '护', '页', '软', '网', '盘', '让', '过', '这', '进', '远', '运', '优', '会', '个', '义', '来', '为', '无', '问', '开', '关', '应', '验', '马', '龙', '门', '风', '飞', '乐', '极'];
@@ -49,5 +63,5 @@ for (const ch of SIMP_ONLY) {
     break;
   }
 }
-if (!fail) console.log('I18N-OK src=' + srcIds.size + ' po=' + poIds.size);
+if (!fail) console.log('I18N-OK src=' + srcIds.size + ' po=' + poIds.size + ' zhtw=' + zhIds.size);
 process.exit(fail);
