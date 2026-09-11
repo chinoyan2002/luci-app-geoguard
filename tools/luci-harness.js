@@ -368,16 +368,33 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
     }
   }
   console.log('ban-fields OK');
-  // 12b. 設定籤：DDNS 清單＋間隔欄位存在
-  const setOpts = OPTS.filter((o) => o._tab === 'settings' && o._name);
-  const setNames = setOpts.map((o) => o._name);
+  // 12b. 防護籤：DDNS 清單＋間隔欄位存在（已從設定籤搬家）
+  const banOpts2 = OPTS.filter((o) => o._tab === 'ban' && o._name);
+  const banNames2 = banOpts2.map((o) => o._name);
   for (const need of ['company_ddns', 'ddns_interval']) {
-    if (!setNames.includes(need)) {
-      console.error('HARNESS-FAIL: 設定籤缺欄位 ' + need);
+    if (!banNames2.includes(need)) {
+      console.error('HARNESS-FAIL: 防護籤缺DDNS欄位 ' + need);
       process.exit(1);
     }
   }
+  const setOpts = OPTS.filter((o) => o._tab === 'settings' && o._name);
+  const setNames = setOpts.map((o) => o._name);
+  if (setNames.includes('company_ddns') || setNames.includes('ddns_interval')) {
+    console.error('HARNESS-FAIL: DDNS欄位還在設定籤');
+    process.exit(1);
+  }
   console.log('ddns-fields OK');
+  // 12c. 全擋說明的數字跟著參數走（store ban_bantime=2 → 含「2 小時」）
+  const allText = NODES.map((n) => n.textContent || '').join('\n');
+  if (allText.indexOf('2 小時自動解封') < 0) {
+    console.error('HARNESS-FAIL: 全擋說明未帶參數值');
+    process.exit(1);
+  }
+  if (/\d 小時自動解封/.test(allText) && allText.indexOf('2 小時自動解封') < 0) {
+    console.error('HARNESS-FAIL: 全擋說明數字寫死');
+    process.exit(1);
+  }
+  console.log('bannote-dynamic OK');
   const banSaveBtn = btnByText('儲存防護設定並重啟');
   const unbanBtn = btnByText('全部解封');
   if (!banSaveBtn || !unbanBtn || banSaveBtn.parent !== unbanBtn.parent) {

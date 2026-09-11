@@ -63,17 +63,14 @@
 - 前端第三籤「登入防護」：四數字＋兩開關＋封鎖名單＋全部解封；存檔後 reload 服務。
 - 遷移：`41-luci-app-countryallow-ban` 停舊 loop、清 rc.local、舊檔改 `.bak`。
 
-## 11. 公司 DDNS 動態白名單（浮動 IP 永久放行，多家清單，與 IP 白名單脫鉤）
-- `company_ddns` 是清單（DynamicList，可多筆；發行版預設空，你家靠 conffile 保留）。
-  間隔 `ddns_interval`（預設 3 分）；`countryallow-cron` 有填才排 `*/N`，同步當下跑一次；
-  清單清空但 state 有貨→跑一次 purge。
-- 狀態 `/etc/luci-uploads/company-ddns.list`（`host ip` 多行）＋機器清單 `ddns_ips`
-  （UI 不顯示）；人工 `whitelist` 一字不動——來源脫鉤，生成物（合併檔）才合流。
-- `countryallow-ddns`：逐家解析（公網 IPv4，失敗沿用）→換血（UCI＋live 先加新再刪舊）
-  →移除即 purge（UCI＋live＋state＋history）→成功只寫 log（banIP 自癒，不主動踢；
-  實測 `banip reload` 超過 10 分鐘，會拖死呼叫者）。
-- 每日更新把 `ddns_ips` 併入合併集（不進白名單集）；ban 免封吃白名單檔＋ddns state。
-- 重開機靠檔案＋N 分鐘內 cron 補齊。
+## 11. DDNS 白名單（只適用防護免封，與 IP 集合無關）
+- 防護籤的 company_ddns 清單（DynamicList，可多筆；發行版預設空）＋ddns_interval
+  （預設 3 分）；countryallow-cron 有填才排，同步當下跑一次；清單清空但
+  state 有貨→跑一次 purge。
+- 狀態 company-ddns.list（host ip 多行）；countryallow-ddns 只管 state＋purge
+  ＋history＋log，不寫 UCI 名單、不碰 live 集合、不改集合檔。
+- ban 免封讀白名單檔＋ddns state；公司通行只靠地理（TW 在允許集）。
+- 每日更新／重開機與 DDNS 無關。
 
 ## 12. 登入防護 v2（全擋＋去寫死，發行導向）
 - 被封＝全擋：guard 只有兩條（限速 log＋drop），`iifname <wan> ip saddr @ban_luci`，

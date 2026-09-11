@@ -7,7 +7,7 @@ sed -i '\#countryallow-update#d' "$CRON_FILE" 2>/dev/null
 sed -i '\#countryallow-ddns#d' "$CRON_FILE" 2>/dev/null
 
 BASE_DIR="/etc/luci-uploads"
-# 公司 DDNS 動態白名單：間隔讀 UCI（預設 3 分）；清單空但 state 有貨＝剛被清空→跑一次 purge
+# DDNS 白名單：間隔讀 UCI（預設 3 分）；清單空但 state 有貨＝剛被清空→跑一次 purge
 DDNS_I=$(uci -q get countryallow.main.ddns_interval 2>/dev/null)
 case "$DDNS_I" in ''|*[!0-9]*) DDNS_I=3 ;; esac
 [ "$DDNS_I" -lt 1 ] && DDNS_I=1

@@ -1,16 +1,12 @@
 #!/bin/sh
-# countryallow-ddns: DDNS 動態白名單（多家清單，與 IP 白名單脫鉤）
-# 來源：company_ddns 清單（人填的域名）；存貨：company-ddns.list（host ip）＋ ddns_ips（機器管的 IP）
-# 移除一家＝purge（UCI＋live＋state 斷乾淨）；換 IP＝換血；成功換血踢 banIP 刷新
+# countryallow-ddns: DDNS 白名單（多家清單，只適用防護免封，不動 IP 集合）
+# 來源：company_ddns 清單（人填的域名）；存貨：company-ddns.list（host ip）
+# 移除一家＝purge（state＋記錄斷乾淨）；換 IP＝換 state；成功只寫 log
+# ban 免封直接讀 state 檔；IP 集合的放行封鎖與本腳本無關（唯一關聯是人工白名單）
 BASE_DIR="/etc/luci-uploads"
 STATE="$BASE_DIR/company-ddns.list"
 HIST="$BASE_DIR/history.log"
 [ -f "$STATE" ] || : > "$STATE"
-
-SETNAME=$(uci -q get countryallow.main.setname 2>/dev/null)
-echo "$SETNAME" | grep -qE '^[A-Za-z][A-Za-z0-9_-]*$' || SETNAME="allowed-IPList"
-WHITENAME=$(uci -q get countryallow.main.white_name 2>/dev/null)
-echo "$WHITENAME" | grep -qE '^[A-Za-z][A-Za-z0-9_-]*$' || WHITENAME="CustomAllow"
 
 resolve() {
   nslookup "$1" 2>/dev/null \
@@ -36,9 +32,6 @@ while read -r h ip; do
   keep=0
   for want in $HOSTS; do [ "$want" = "$h" ] && keep=1; done
   if [ "$keep" = "0" ]; then
-    for nm in "$SETNAME" "$WHITENAME"; do
-      nft delete element inet fw4 "$nm" "{ $ip }" 2>/dev/null
-    done
     logger -t countryallow-ddns "purge $h $ip"
     hist "purge|$h $ip"
     CHANGED=1
@@ -56,26 +49,12 @@ for h in $HOSTS; do
   if [ "$ip" != "$old" ]; then
     awk -v h="$h" '$1 != h' "$NEWSTATE" > "$NEWSTATE.tmp" 2>/dev/null && mv "$NEWSTATE.tmp" "$NEWSTATE"
     echo "$h $ip" >> "$NEWSTATE"
-    for nm in "$SETNAME" "$WHITENAME"; do
-      if nft list set inet fw4 "$nm" >/dev/null 2>&1; then
-        nft add element inet fw4 "$nm" "{ $ip }" 2>/dev/null
-        [ -n "$old" ] && nft delete element inet fw4 "$nm" "{ $old }" 2>/dev/null
-      fi
-    done
     logger -t countryallow-ddns "company $h: ${old:-none} -> $ip"
     hist "$h ${old:-none} -> $ip"
     CHANGED=1
   fi
 done
 mv -f "$NEWSTATE" "$STATE"
-
-# ddns_ips 與 state 對帳（機器管的清單，UI 不顯示，人不碰）
-uci delete countryallow.main.ddns_ips 2>/dev/null
-while read -r h ip; do
-  [ -z "$h" ] && continue
-  valid_ip "$ip" && uci add_list countryallow.main.ddns_ips="$ip"
-done < "$STATE"
-uci commit countryallow
 
 # 換血成功→記一筆，提醒 banIP 自癒（不主動踢：banip reload 實測超過 10 分鐘，
 # 會拖住呼叫者；banIP 自己的 autoallowlist 週期會重解重寫）

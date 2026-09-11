@@ -9,7 +9,7 @@ config countryallow 'main'
 	option update_hour '3'
 	option update_min '10'
 	option white_name 'CustomAllow'
-	# list company_ddns：公司 DDNS 清單（UI 新增，空＝停用；發行版不預填）
+	# list company_ddns：DDNS 白名單清單（UI 新增，空＝停用；發行版不預填）
 	option ban_interval '60'
 	option ddns_interval '3'
 	list ban_exempt '127.0.0.0/8'

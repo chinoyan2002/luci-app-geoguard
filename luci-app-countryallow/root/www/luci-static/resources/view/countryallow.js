@@ -418,17 +418,17 @@ return view.extend({
 		o.default = 'CustomAllow';
 		o.rmempty = false;
 		o.description = _('白名單獨立成一個集合，防火牆 IP 集合頁可見，規則同上。');
-		o = s.taboption('settings', form.DynamicList, 'company_ddns', _('公司 DDNS 清單（動態白名單）'));
+		o = s.taboption('ban', form.DynamicList, 'company_ddns', _('DDNS 白名單清單'));
 		o.validate = function(section_id, value) {
 			if (!value || !value.trim())
 				return true;
 			if (!/^(?=.{1,253}$)[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)+$/.test(value.trim()))
-				return _('請輸入合法網域名稱（如 2244526.myftp.org）');
+				return _('請輸入合法網域名稱（如 home.example.org）');
 			return true;
 		};
 		o.rmempty = true;
-		o.description = _('可新增多筆；每筆獨立追 IP。浮動 IP 永久放行：定期解析，變了自動換血（UCI＋live 同步），解析失敗沿用舊 IP。刪掉一筆＝該家斷乾淨（UCI＋live＋記錄全清）。');
-		o = s.taboption('settings', form.Value, 'ddns_interval', _('DDNS 檢查間隔（分鐘）'));
+		o.description = _('可新增多筆；每筆獨立追 IP。本清單只適用防護免封，不動 IP 集合。浮動 IP 永久免封：定期解析，變了自動換血，解析失敗沿用舊 IP。刪除一筆＝該筆斷乾淨（記錄全清）。');
+		o = s.taboption('ban', form.Value, 'ddns_interval', _('DDNS 檢查間隔（分鐘）'));
 		o.datatype = 'range(1,60)';
 		o.default = '3';
 		o.rmempty = false;
@@ -613,7 +613,7 @@ return view.extend({
 		o.datatype = 'range(5,300)';
 		o.default = '60';
 		o.rmempty = false;
-		o.description = _('幾秒翻一次登入日誌。越短封越快，60 秒內一定抓到。');
+		o.description = _('幾秒翻一次登入日誌。越短封越快，一個巡邏間隔內一定抓到。');
 		o = s.taboption('ban', form.Value, 'ban_wan_if', _('外網介面（自動偵測）'));
 		o.validate = function(section_id, value) {
 			if (!value || !value.trim())
@@ -626,8 +626,9 @@ return view.extend({
 		o.description = _('留空自動偵測（firewall wan 區→系統→預設路由）。只有自動偵測失靈才手填（如 pppoe-wan）。');
 		o = s.taboption('ban', form.DummyValue, '_bannote');
 		o.render = function(section_id) {
+			var bh = uci.get('countryallow', 'main', 'ban_bantime') || '2';
 			return E('div', { 'class': 'cbi-section' }, [
-				E('p', {}, [_('被封鎖＝整台對他消失：外網進來的所有封包（所有 port、TCP/UDP/ICMP）在源頭全丟，2 小時自動解封。')])
+				E('p', {}, [_('被封鎖＝整台對他消失：外網進來的所有封包（所有 port、TCP/UDP/ICMP）在源頭全丟，') + bh + _(' 小時自動解封。')])
 			]);
 		};
 
