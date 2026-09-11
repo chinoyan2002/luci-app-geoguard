@@ -418,16 +418,21 @@ return view.extend({
 		o.default = 'CustomAllow';
 		o.rmempty = false;
 		o.description = _('白名單獨立成一個集合，防火牆 IP 集合頁可見，規則同上。');
-		o = s.taboption('settings', form.Value, 'company_ddns', _('公司 DDNS（動態白名單）'));
+		o = s.taboption('settings', form.DynamicList, 'company_ddns', _('公司 DDNS 清單（動態白名單）'));
 		o.validate = function(section_id, value) {
 			if (!value || !value.trim())
 				return true;
 			if (!/^(?=.{1,253}$)[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)+$/.test(value.trim()))
-				return _('請輸入合法網域名稱（如 2244526.myftp.org），留空即停用');
+				return _('請輸入合法網域名稱（如 2244526.myftp.org）');
 			return true;
 		};
 		o.rmempty = true;
-		o.description = _('浮動 IP 永久放行：每 10 分鐘解析一次，變了自動換血（UCI＋live 同步），解析失敗沿用舊 IP。');
+		o.description = _('可新增多筆；每筆獨立追 IP。浮動 IP 永久放行：定期解析，變了自動換血（UCI＋live 同步），解析失敗沿用舊 IP。刪掉一筆＝該家斷乾淨（UCI＋live＋記錄全清）。');
+		o = s.taboption('settings', form.Value, 'ddns_interval', _('DDNS 檢查間隔（分鐘）'));
+		o.datatype = 'range(1,60)';
+		o.default = '3';
+		o.rmempty = false;
+		o.description = _('幾分鐘解析一次 DDNS。');
 
 		o = s.taboption('settings', form.DummyValue, '_sched');
 		o.render = function(section_id) {
@@ -586,13 +591,45 @@ return view.extend({
 		banNum('ban_maxretry', _('失敗幾次封鎖'), 1, 100, 8, _('同一 IP 在時間窗內失敗達此次數即封鎖。'));
 		banNum('ban_findtime', _('時間窗（分鐘）'), 1, 60, 5, _('往回看幾分鐘的日誌。'));
 		banNum('ban_bantime', _('封鎖多久（小時）'), 1, 72, 2, _('到期 nft 自動解封。'));
-		o = s.taboption('ban', form.Flag, 'ban_web', _('看守 LuCI 網頁登入'));
+		o = s.taboption('ban', form.Flag, 'ban_web', _('防護 LuCI 網頁登入'));
 		o.default = '1';
 		o.rmempty = false;
-		o = s.taboption('ban', form.Flag, 'ban_ssh', _('看守 SSH 登入'));
+		o = s.taboption('ban', form.Flag, 'ban_ssh', _('防護 SSH 登入'));
 		o.default = '1';
 		o.rmempty = false;
-		o.description = _('白名單三層永遠免封：192.168.0.0/16 寫死＋保留段＋白名單集合。');
+		o = s.taboption('ban', form.DynamicList, 'ban_exempt', _('永久免封清單'));
+		o.validate = function(section_id, value) {
+			if (!value || !value.trim())
+				return true;
+			var oct = '(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])';
+			var ip = '(' + oct + '\\.){3}' + oct;
+			if (!new RegExp('^' + ip + '(/([0-9]|[12][0-9]|3[0-2]))?$').test(value.trim()))
+				return _('請輸入 IP 或 CIDR（如 192.168.0.0/16）');
+			return true;
+		};
+		o.rmempty = true;
+		o.description = _('這些永遠不封（預设有保留段＋內網）。白名單集合與 DDNS 追隨自動免封，不用填在這。');
+		o = s.taboption('ban', form.Value, 'ban_interval', _('巡邏間隔（秒）'));
+		o.datatype = 'range(5,300)';
+		o.default = '60';
+		o.rmempty = false;
+		o.description = _('幾秒翻一次登入日誌。越短封越快，60 秒內一定抓到。');
+		o = s.taboption('ban', form.Value, 'ban_wan_if', _('外網介面（自動偵測）'));
+		o.validate = function(section_id, value) {
+			if (!value || !value.trim())
+				return true;
+			if (!/^[A-Za-z0-9._-]+$/.test(value.trim()))
+				return _('介面名稱格式錯誤');
+			return true;
+		};
+		o.rmempty = true;
+		o.description = _('留空自動偵測（firewall wan 區→系統→預設路由）。只有自動偵測失靈才手填（如 pppoe-wan）。');
+		o = s.taboption('ban', form.DummyValue, '_bannote');
+		o.render = function(section_id) {
+			return E('div', { 'class': 'cbi-section' }, [
+				E('p', {}, [_('被封鎖＝整台對他消失：外網進來的所有封包（所有 port、TCP/UDP/ICMP）在源頭全丟，2 小時自動解封。')])
+			]);
+		};
 
 		o = s.taboption('ban', form.DummyValue, '_banstatus');
 		o.render = function(section_id) {
@@ -616,6 +653,8 @@ return view.extend({
 			var saveBan = function() {
 				return map.save(null, true).then(function() {
 					return uci.apply();
+				}).then(function() {
+					return fs.exec('/usr/bin/countryallow-ban-guard');
 				}).then(function() {
 					return fs.exec('/etc/init.d/luci-ban', ['reload']);
 				}).then(function(res) {

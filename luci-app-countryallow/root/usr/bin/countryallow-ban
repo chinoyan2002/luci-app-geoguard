@@ -1,8 +1,7 @@
 #!/bin/sh
-# countryallow-ban: LuCI + SSH 登入防爆破（5 分鐘窗預設，可配）
-# 參數全讀 UCI（countryallow.main.ban_*），缺值用 DEF
-# 白名單三層：① 192.168.0.0/16 永久寫死 ② 迴環/保留段 ③ CustomAllow 白名單檔
-# 由 /etc/init.d/luci-ban（procd）每 60 秒呼叫一次
+# countryallow-ban: LuCI + SSH 登入防爆破（參數全讀 UCI，無寫死）
+# 免封三層：① ban_exempt 清單（UI 可改，預含保留段）② 白名單檔 ③ ddns state
+# 由 /etc/init.d/luci-ban（procd，間隔讀 ban_interval）呼叫
 SET=ban_luci
 CFG=countryallow
 nft list set inet fw4 $SET >/dev/null 2>&1 || exit 0
@@ -19,6 +18,33 @@ WEB=$(g ban_web); [ -z "$WEB" ] && WEB=1
 SSHO=$(g ban_ssh); [ -z "$SSHO" ] && SSHO=1
 WHITE=$(g white_name); [ -z "$WHITE" ] && WHITE=CustomAllow
 WLFILE="/etc/luci-uploads/$WHITE.cidr"
+STATE="/etc/luci-uploads/company-ddns.list"
+
+# CIDR 成員判斷（awk，stdin 逐行：CIDR 或裸 IP）
+in_list() {
+  # $1=ip, stdin=list
+  awk -v ip="$1" '
+  function i2n(a, p, n) { n = split(a, p, "."); return p[1]*16777216+p[2]*65536+p[3]*256+p[4]; }
+  BEGIN { needle = i2n(ip); }
+  { line = $1;
+    if (line ~ /\//) { split(line, a, "/"); b = i2n(a[1]); m = a[2]+0;
+      if (m == 0) { found = 1; exit; }
+      if (rshift(needle, 32-m) == rshift(b, 32-m)) { found = 1; exit; } }
+    else if (line == ip) { found = 1; exit; } }
+  END { exit (found ? 0 : 1); }'
+}
+
+in_exempt() {
+  EX=$(g ban_exempt)
+  [ -z "$EX" ] && return 1
+  # shellcheck disable=SC2086
+  printf '%s\n' $EX | in_list "$1"
+}
+
+in_ddns() {
+  [ -f "$STATE" ] || return 1
+  awk -v ip="$1" '$2 == ip { found = 1; exit; } END { exit (found ? 0 : 1); }' "$STATE"
+}
 
 # N 分鐘時間窗
 WIN=/tmp/countryallow-ban-window
@@ -31,30 +57,12 @@ while [ $i -lt "$FIND" ]; do
 done
 [ -s "$WIN" ] || exit 0
 
-in_whitelist() {
-  [ -f "$WLFILE" ] || return 1
-  awk -v ip="$1" '
-  function i2n(a, p, n) { n = split(a, p, "."); return p[1]*16777216+p[2]*65536+p[3]*256+p[4]; }
-  BEGIN { needle = i2n(ip); }
-  { line = $1;
-    if (line ~ /\//) { split(line, a, "/"); b = i2n(a[1]); m = a[2]+0;
-      if (m == 0) { found = 1; exit; }
-      if (rshift(needle, 32-m) == rshift(b, 32-m)) { found = 1; exit; } }
-    else if (line == ip) { found = 1; exit; } }
-  END { exit (found ? 0 : 1); }' "$WLFILE"
-}
-
 ban_ip() {
   ip="$1"; tag="$2"
-  # DEF 永久白名單：內網 192.168.0.0/16（寫死，不可被 UCI 覆蓋）
-  case "$ip" in
-    192.168.*) return 0 ;;
-  esac
-  case "$ip" in
-    127.*|10.*|172.16.*|172.17.*|172.18.*|172.19.*|172.2?.*|172.30.*|172.31.*|0.0.0.0|"") return 0 ;;
-  esac
-  # 白名單檔（CustomAllow：你＋公司）免封
-  in_whitelist "$ip" && return 0
+  case "$ip" in ""|0.0.0.0) return 0 ;; esac
+  in_exempt "$ip" && return 0
+  [ -f "$WLFILE" ] && in_list "$ip" < "$WLFILE" && return 0
+  in_ddns "$ip" && return 0
   if ! nft get element inet fw4 $SET "{ $ip }" >/dev/null 2>&1; then
     nft add element inet fw4 $SET "{ $ip timeout ${BANH}h }" \
       && logger -t countryallow-ban "banned $ip for ${BANH}h ($tag brute force)"

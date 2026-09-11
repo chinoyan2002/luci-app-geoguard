@@ -63,11 +63,22 @@
 - 前端第三籤「登入防護」：四數字＋兩開關＋封鎖名單＋全部解封；存檔後 reload 服務。
 - 遷移：`41-luci-app-countryallow-ban` 停舊 loop、清 rc.local、舊檔改 `.bak`。
 
-## 11. 公司 DDNS 動態白名單（浮動 IP 永久放行）
-- 設定 `company_ddns`（預設 `2244526.myftp.org`，留空停用）；`countryallow-cron`
-  有填才排 `*/10 * * * * /usr/bin/countryallow-ddns`，且同步當下立刻跑一次。
-- `/usr/bin/countryallow-ddns`：nslookup 取第一個公網 IPv4（濾掉私網／127，失敗沿用舊的）；
-  與 `/etc/luci-uploads/company-ddns.ip` 比對，無變動靜默退出。
-- 變了才換血：UCI 白名單刪舊加新（用戶手寫的一律保留）＋ live 兩集合先加新再刪舊
-  （零空窗）；寫 history.log。
-- 每日更新從 UCI 重蓋檔案，自然包含公司 IP；重開機靠檔案＋10 分鐘內 cron 補齊。
+## 11. 公司 DDNS 動態白名單（浮動 IP 永久放行，多家清單，與 IP 白名單脫鉤）
+- `company_ddns` 是清單（DynamicList，可多筆；發行版預設空，你家靠 conffile 保留）。
+  間隔 `ddns_interval`（預設 3 分）；`countryallow-cron` 有填才排 `*/N`，同步當下跑一次；
+  清單清空但 state 有貨→跑一次 purge。
+- 狀態 `/etc/luci-uploads/company-ddns.list`（`host ip` 多行）＋機器清單 `ddns_ips`
+  （UI 不顯示）；人工 `whitelist` 一字不動——來源脫鉤，生成物（合併檔）才合流。
+- `countryallow-ddns`：逐家解析（公網 IPv4，失敗沿用）→換血（UCI＋live 先加新再刪舊）
+  →移除即 purge（UCI＋live＋state＋history）→成功只寫 log（banIP 自癒，不主動踢；
+  實測 `banip reload` 超過 10 分鐘，會拖死呼叫者）。
+- 每日更新把 `ddns_ips` 併入合併集（不進白名單集）；ban 免封吃白名單檔＋ddns state。
+- 重開機靠檔案＋N 分鐘內 cron 補齊。
+
+## 12. 登入防護 v2（全擋＋去寫死，發行導向）
+- 被封＝全擋：guard 只有兩條（限速 log＋drop），`iifname <wan> ip saddr @ban_luci`，
+  無 port／協議限制；wan 介面 `ban_wan_if` 空值自動偵測（firewall wan 區→ubus→預設路由）。
+- 免封 `ban_exempt` 清單化（預設 5 段保留網段，含 192.168/16）；巡邏 `ban_interval`
+ （預設 60 秒，5–300）；全部 UCI＋UI 可改，包裡無寫死 IP／port／介面。
+- `countryallow-ban-guard` 依 UCI 重產 guard，有變才 `fw4 reload`；防護籤存檔連動
+  （guard 重產＋服務重啟）。

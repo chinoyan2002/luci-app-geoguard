@@ -361,13 +361,23 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
   // 12. 防護籤：ban 欄位存在（taboption 有名）＋兩鍵同列＋行為
   const banOpts = OPTS.filter((o) => o._tab === 'ban' && o._name);
   const banNames = banOpts.map((o) => o._name);
-  for (const need of ['ban_enabled', 'ban_maxretry', 'ban_findtime', 'ban_bantime', 'ban_web', 'ban_ssh', '_banstatus', '_banactions']) {
+  for (const need of ['ban_enabled', 'ban_maxretry', 'ban_findtime', 'ban_bantime', 'ban_web', 'ban_ssh', 'ban_exempt', 'ban_interval', 'ban_wan_if', '_bannote', '_banstatus', '_banactions']) {
     if (!banNames.includes(need)) {
       console.error('HARNESS-FAIL: 防護籤缺欄位 ' + need + ' (有: ' + JSON.stringify(banNames) + ')');
       process.exit(1);
     }
   }
   console.log('ban-fields OK');
+  // 12b. 設定籤：DDNS 清單＋間隔欄位存在
+  const setOpts = OPTS.filter((o) => o._tab === 'settings' && o._name);
+  const setNames = setOpts.map((o) => o._name);
+  for (const need of ['company_ddns', 'ddns_interval']) {
+    if (!setNames.includes(need)) {
+      console.error('HARNESS-FAIL: 設定籤缺欄位 ' + need);
+      process.exit(1);
+    }
+  }
+  console.log('ddns-fields OK');
   const banSaveBtn = btnByText('儲存防護設定並重啟');
   const unbanBtn = btnByText('全部解封');
   if (!banSaveBtn || !unbanBtn || banSaveBtn.parent !== unbanBtn.parent) {
@@ -379,7 +389,7 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
   await banSaveBtn.fire('click');
   await unbanBtn.fire('click');
   const banExecs = execCalls.slice(execBeforeBan);
-  if (!banExecs.includes('/etc/init.d/luci-ban') || !banExecs.includes('/usr/bin/countryallow-ban-unban')) {
+  if (!banExecs.includes('/etc/init.d/luci-ban') || !banExecs.includes('/usr/bin/countryallow-ban-unban') || !banExecs.includes('/usr/bin/countryallow-ban-guard')) {
     console.error('HARNESS-FAIL: 防護按鍵未打到後端: ' + JSON.stringify(banExecs));
     process.exit(1);
   }

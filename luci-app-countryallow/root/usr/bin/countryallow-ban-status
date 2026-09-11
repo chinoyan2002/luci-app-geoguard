@@ -15,6 +15,12 @@ else
   echo "luci-ban：未執行"
 fi
 echo "== 參數 =="
-for k in ban_enabled ban_maxretry ban_findtime ban_bantime ban_web ban_ssh; do
+for k in ban_enabled ban_maxretry ban_findtime ban_bantime ban_web ban_ssh ban_interval ddns_interval; do
   echo "$k=$(uci get countryallow.main.$k 2>/dev/null)"
 done
+echo "== DDNS 追隨 =="
+if [ -s /etc/luci-uploads/company-ddns.list ]; then
+  cat /etc/luci-uploads/company-ddns.list
+else
+  echo "（無）"
+fi
