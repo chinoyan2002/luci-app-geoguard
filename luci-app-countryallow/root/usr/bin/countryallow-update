@@ -37,6 +37,15 @@ cc_en() {
 
 /usr/bin/countryallow-fetch
 
+# 逐國結果寫入歷史
+if [ -f "$BASE_DIR/.fetch-results" ]; then
+  while IFS= read -r line; do
+    [ -z "$line" ] && continue
+    echo "$(date '+%F %T')|fetch|$line" >> "$BASE_DIR/history.log"
+  done < "$BASE_DIR/.fetch-results"
+  rm -f "$BASE_DIR/.fetch-results"
+fi
+
 # 範圍 A-B 展開成最小 CIDR 組（awk，無外部依賴）
 range2cidr() {
   awk '
@@ -229,4 +238,8 @@ for item in $DESIRED; do
   fi
 done
 logger -t countryallow "done $SETNAME +$WHITENAME"
-hist "merged+white" "ok"
+if [ "$changed_files" = "1" ]; then
+  hist "merged+white" "ok"
+else
+  hist "merged+white" "目前沒有新的更新"
+fi

@@ -97,6 +97,7 @@ var CONTINENTS = [
 
 var countryState = {};
 var wlState = [];
+var countsDiv = null;
 var schedState = { freq: 'daily', hour: '3', min: '10', auto: '1' };
 var OLD_GROUPS = ['asia', 'europe', 'africa', 'northamerica', 'southamerica', 'oceania'];
 
@@ -149,6 +150,11 @@ return view.extend({
 				return (res.code === 0 && res.stdout) ? res.stdout : '狀態腳本執行失敗';
 			}).catch(function(e) {
 				return '狀態腳本執行失敗：' + e.message;
+			}),
+			fs.exec('/usr/bin/countryallow-counts').then(function(res) {
+				return (res.code === 0 && res.stdout) ? res.stdout.trim() : '';
+			}).catch(function() {
+				return '';
 			})
 		]);
 	},
@@ -156,6 +162,27 @@ return view.extend({
 	render: function(data) {
 		var m, s, o;
 		var logText = data[1] || '';
+		var countsText = data[2] || '';
+
+		var countsLine = function() {
+			var p = (countsText || '').split(/\s+/);
+			if (p.length < 4 || !p[0])
+				return _('目前啟用的集合：尚無資料');
+			return _('目前啟用：') + p[0] + '.cidr' + _('（') + p[1] + _(' 行／live ') + p[2] + _(' 段／更新於 ') + p[3].replace('_', ' ') + '）';
+		};
+
+		var refreshCounts = function() {
+			return fs.exec('/usr/bin/countryallow-counts').then(function(res) {
+				if (res.code !== 0 || !res.stdout)
+					return;
+				countsText = res.stdout.trim();
+				if (countsDiv) {
+					while (countsDiv.firstChild)
+						countsDiv.removeChild(countsDiv.firstChild);
+					countsDiv.appendChild(E('span', {}, [countsLine()]));
+				}
+			}).catch(function() {});
+		};
 
 		m = new form.Map('countryallow', _('國家IPS集合建立器 Country Allow List'),
 			_('勾選國家＋白名單 IP，合併成集合檔。本頁只生產 IP 集合，不動防火牆。'));
@@ -290,6 +317,12 @@ return view.extend({
 				headRow,
 				wrap
 			]);
+		};
+
+		o = s.taboption('settings', form.DummyValue, '_counts');
+		o.render = function(section_id) {
+			countsDiv = E('div', { 'class': 'country-counts', 'style': 'margin:0.5em 0' }, [countsLine()]);
+			return countsDiv;
 		};
 
 		o = s.taboption('settings', form.DummyValue, '_whitelist');
@@ -470,6 +503,7 @@ return view.extend({
 						ui.addNotification(null, E('p', _(okmsg)), 'info');
 					} else if (res.code === 0) {
 						ui.addNotification(null, E('p', _(okmsg)), 'info');
+						return refreshCounts();
 					} else {
 						ui.addNotification(null, E('p', _('更新失敗：') + (res.stderr || res.stdout || '未知錯誤')), 'error');
 					}
@@ -498,7 +532,23 @@ return view.extend({
 
 		o = s.taboption('log', form.DummyValue, '_log');
 		o.render = function(section_id) {
-			return E('pre', { 'style': 'white-space:pre-wrap' }, [logText]);
+			var pre = E('pre', { 'style': 'white-space:pre-wrap' }, [logText]);
+			var clr = E('button', { 'class': 'btn cbi-button cbi-button-neutral', 'style': 'margin-bottom:0.5em' }, [_('清除更新歷史')]);
+			clr.addEventListener('click', function(ev) {
+				if (ev && ev.preventDefault)
+					ev.preventDefault();
+				return fs.exec('/usr/bin/countryallow-clear-history').then(function() {
+					return fs.exec('/usr/bin/countryallow-status');
+				}).then(function(res) {
+					while (pre.firstChild)
+						pre.removeChild(pre.firstChild);
+					pre.appendChild(document.createTextNode(res.stdout || ''));
+					ui.addNotification(null, E('p', _('更新歷史已清除')), 'info');
+				}).catch(function(e) {
+					ui.addNotification(null, E('p', _('執行失敗：') + e.message), 'error');
+				});
+			});
+			return E('div', {}, [clr, pre]);
 		};
 
 		return m.render();

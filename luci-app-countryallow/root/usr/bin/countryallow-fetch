@@ -36,16 +36,22 @@ fetch_one() {
     grep -qvE '^[0-9]{1,3}(\.[0-9]{1,3}){3}/[0-9]{1,2}$' "$clean" && continue
     mv -f "$clean" "$BASE_DIR/${cc}.cidr"
     logger -t countryallow "$cc 更新成功（來源:$srcname）"
+    echo "$cc:成功:$srcname:$(wc -l < "$BASE_DIR/${cc}.cidr")行" >> "$BASE_DIR/.fetch-results"
     return 0
   done
   logger -t countryallow "$cc 更新失敗（主備皆不可用，沿用舊檔）"
+  echo "$cc:失敗:沿用舊檔" >> "$BASE_DIR/.fetch-results"
   return 1
 }
 
 OK=0; FAIL=""
+: > "$BASE_DIR/.fetch-results"
 for cc in $SELECTED; do
   [ -z "$cc" ] && continue
   if fetch_one "$cc"; then OK=$((OK+1)); else FAIL="$FAIL $cc"; fi
 done
 logger -t countryallow "IP 集合抓取完成：成功 $OK 國，失敗:$FAIL"
+echo "$(date '+%F %T')|fetch-only|成功=$OK 失敗:$FAIL" >> "$BASE_DIR/history.log"
+tail -n 200 "$BASE_DIR/history.log" > "$TEMP_DIR/hist" 2>/dev/null \
+  && mv "$TEMP_DIR/hist" "$BASE_DIR/history.log"
 [ -z "$FAIL" ]

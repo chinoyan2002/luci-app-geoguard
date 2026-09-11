@@ -12,7 +12,7 @@ else
   echo "集合檔：$FILE（不存在，請按立即更新 IP 集合）"
 fi
 if nft list set inet fw4 "$SETNAME" >/dev/null 2>&1; then
-  echo "live set：$(nft list set inet fw4 "$SETNAME" 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | wc -l) 段生效中"
+  echo "live set：$(nft list set inet fw4 "$SETNAME" 2>/dev/null | tr ',' '\n' | grep -c '/') 段生效中"
 else
   echo "live set：不存在（防火牆重載後才會建立）"
 fi

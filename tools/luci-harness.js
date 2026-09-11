@@ -86,12 +86,17 @@ form.Map.prototype.section = function() {
 form.Map.prototype.render = function() { return Promise.resolve({}); };
 form.Map.prototype.save = function() { return Promise.resolve(); };
 const execCalls = [];
+let statusCalls = 0;
 const fsStub = {
   list: () => Promise.resolve([]),
   exec: (cmd) => {
     execCalls.push(cmd);
-    if (cmd === '/usr/bin/countryallow-status')
-      return Promise.resolve({ code: 0, stdout: '===== 集合狀態 =====\n集合檔：x (100 行)\n===== 更新歷史（近 20 筆） =====\n2026-09-11|update|ok\n' });
+    if (cmd === '/usr/bin/countryallow-status') {
+      statusCalls++;
+      if (statusCalls === 1)
+        return Promise.resolve({ code: 0, stdout: '===== 集合狀態 =====\n集合檔：x (100 行)\n===== 更新歷史（近 20 筆） =====\n2026-09-11|update|ok\n' });
+      return Promise.resolve({ code: 0, stdout: '===== 集合狀態 =====\n===== 更新歷史（近 20 筆） =====\n（尚無記錄）\n' });
+    }
     return Promise.resolve({ code: 0 });
   },
 };
@@ -125,8 +130,9 @@ const uci = {
   apply: function() { this.applyCalls++; execCalls.push('APPLY'); return Promise.resolve(0); },
 };
 
-const factory = new Function('view', 'form', 'fs', 'ui', 'uci', 'E', '_', code);
-const v = factory(view, form, fsStub, ui, uci, E, _);
+const document = { createTextNode: (t) => t };
+const factory = new Function('view', 'form', 'fs', 'ui', 'uci', 'E', '_', 'document', code);
+const v = factory(view, form, fsStub, ui, uci, E, _, document);
 
 const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.type === type);
 
@@ -371,6 +377,20 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
     process.exit(1);
   }
   console.log('auto-flag + save-button OK');
+  // 12b. 清除更新歷史 → 跑 clear 腳本＋pre 重刷為空
+  const clrHist = NODES.find((n) => n.tag === 'button' && n.textContent === '清除更新歷史');
+  if (!clrHist) { console.error('HARNESS-FAIL: 找不到清除更新歷史鍵'); process.exit(1); }
+  await clrHist.fire('click');
+  if (!execCalls.includes('/usr/bin/countryallow-clear-history')) {
+    console.error('HARNESS-FAIL: 沒打到清除腳本');
+    process.exit(1);
+  }
+  const pres2 = NODES.filter((n) => n.tag === 'pre');
+  if (!pres2.some((p) => p.textContent.indexOf('尚無記錄') >= 0)) {
+    console.error('HARNESS-FAIL: 清除後 pre 未更新');
+    process.exit(1);
+  }
+  console.log('clear-history OK');
   // 12. 白名單自訂新增列：非法擋下、合法加入、刪除、存檔
   const wlInput = NODES.find((n) => n.tag === 'input' && n.attrs.type === 'text' && (n.attrs.placeholder || '').indexOf('203.0.113.10') >= 0);
   const wlAdd = NODES.find((n) => n.tag === 'button' && n.textContent === '新增');
