@@ -399,11 +399,11 @@ return view.extend({
 			]);
 		};
 
-		o = s.taboption('settings', form.Value, 'src_primary', _('P地理定位-主要訂閱源'));
+		o = s.taboption('settings', form.Value, 'src_primary', _('IP地理定位-主要訂閱源'));
 		o.default = 'https://www.ipdeny.com/ipblocks/data/aggregated/{cc}-aggregated.zone';
 		o.rmempty = false;
 		o.description = _('{cc} 會換成國碼小寫，{CC} 大寫。');
-		o = s.taboption('settings', form.Value, 'src_backup', _('P地理定位-備用訂閱源'));
+		o = s.taboption('settings', form.Value, 'src_backup', _('IP地理定位-備用訂閱源'));
 		o.default = 'https://raw.githubusercontent.com/ipverse/country-ip-blocks/master/country/{cc}/ipv4-aggregated.txt';
 		o.rmempty = false;
 		o.description = _('失敗改抓備用；抓不到沿用舊檔。');

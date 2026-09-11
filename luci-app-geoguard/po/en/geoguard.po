@@ -220,11 +220,11 @@ msgstr "Within (minutes)"
 msgid "檢視記錄並封鎖的間隔（秒）"
 msgstr "Log review and ban interval (sec)"
 
-msgid "P地理定位-主要訂閱源"
-msgstr "P Geolocation - Primary Feed"
+msgid "IP地理定位-主要訂閱源"
+msgstr "IP Geolocation - Primary Feed"
 
-msgid "P地理定位-備用訂閱源"
-msgstr "P Geolocation - Backup Feed"
+msgid "IP地理定位-備用訂閱源"
+msgstr "IP Geolocation - Backup Feed"
 
 msgid "啟用此選項來封鎖登入失敗次數過多的 IP 位址"
 msgstr "Enable this option to block IP addresses with too many failed logins"

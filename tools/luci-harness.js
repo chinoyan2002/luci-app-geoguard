@@ -416,7 +416,7 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
       process.exit(1);
     }
   }
-  for (const need of ['永不封鎖的白名單', '解除所有IP的封鎖', 'P地理定位-主要訂閱源', 'P地理定位-備用訂閱源', '啟用此選項來封鎖登入失敗次數過多的 IP 位址']) {
+  for (const need of ['永不封鎖的白名單', '解除所有IP的封鎖', 'IP地理定位-主要訂閱源', 'IP地理定位-備用訂閱源', '啟用此選項來封鎖登入失敗次數過多的 IP 位址']) {
     if (code.indexOf(need) < 0) {
       console.error('HARNESS-FAIL: 缺新標籤 ' + need);
       process.exit(1);
