@@ -1,8 +1,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-countryallow
-PKG_VERSION:=2026.09.11
-PKG_RELEASE:=2
+PKG_VERSION:=1.0.0
+PKG_RELEASE:=1
 
 PKG_MAINTAINER:=chinoyan
 PKG_LICENSE:=MIT

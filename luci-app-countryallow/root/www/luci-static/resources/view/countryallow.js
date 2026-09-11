@@ -5,6 +5,7 @@
 'require ui';
 'require uci';
 
+var VERSION = '1.0.0';
 var CONTINENTS = [
 	['asia', '亞洲', [
 		['af', '阿富汗', 'AFGHANISTAN'], ['am', '亞美尼亞', 'ARMENIA'], ['az', '亞塞拜然', 'AZERBAIJAN'],
@@ -191,14 +192,14 @@ return view.extend({
 			}).catch(function() {});
 		};
 
-		m = new form.Map('countryallow', _('國家IPS集合建立器 Country Allow List'),
+		m = new form.Map('countryallow', _('國家IPS集合建立器 Country Allow List Ver:') + VERSION,
 			_('勾選國家＋白名單 IP，合併成集合檔。本頁只生產 IP 集合，不動防火牆。'));
 
 		s = m.section(form.TypedSection, 'countryallow', _('設定'));
 		s.anonymous = true;
-		s.tab('settings', _('設定'));
-		s.tab('log', _('記錄'));
 		s.tab('ban', _('登入防護'));
+		s.tab('settings', _('IPs 設定'));
+		s.tab('log', _('記錄'));
 
 		o = s.taboption('settings', form.DummyValue, '_countries');
 		o.render = function(section_id) {
@@ -418,21 +419,6 @@ return view.extend({
 		o.default = 'CustomAllow';
 		o.rmempty = false;
 		o.description = _('白名單獨立成一個集合，防火牆 IP 集合頁可見，規則同上。');
-		o = s.taboption('ban', form.DynamicList, 'company_ddns', _('DDNS 白名單清單'));
-		o.validate = function(section_id, value) {
-			if (!value || !value.trim())
-				return true;
-			if (!/^(?=.{1,253}$)[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)+$/.test(value.trim()))
-				return _('請輸入合法網域名稱（如 home.example.org）');
-			return true;
-		};
-		o.rmempty = true;
-		o.description = _('可新增多筆；每筆獨立追 IP。本清單只適用防護免封，不動 IP 集合。浮動 IP 永久免封：定期解析，變了自動換血，解析失敗沿用舊 IP。刪除一筆＝該筆斷乾淨（記錄全清）。');
-		o = s.taboption('ban', form.Value, 'ddns_interval', _('DDNS 檢查間隔（分鐘）'));
-		o.datatype = 'range(1,60)';
-		o.default = '3';
-		o.rmempty = false;
-		o.description = _('幾分鐘解析一次 DDNS。');
 
 		o = s.taboption('settings', form.DummyValue, '_sched');
 		o.render = function(section_id) {
@@ -490,8 +476,8 @@ return view.extend({
 			return E('div', { 'class': 'cbi-section' }, [
 				E('style', {}, ['#cbi-countryallow input.cbi-input-text{width:100%;max-width:1024px}#cbi-countryallow .cbi-value-title{width:300px;flex:0 0 300px;white-space:nowrap}#cbi-countryallow .cbi-value-field .btn{width:auto}#cbi-countryallow table.cbi-section-table td,#cbi-countryallow table.cbi-section-table th{padding:3px 6px}#cbi-countryallow p{margin:0.3em 0}#cbi-countryallow .cbi-dynlist{width:100%;max-width:none}#cbi-countryallow .cbi-dynlist .add-item{display:flex}#cbi-countryallow .cbi-dynlist .add-item input{flex:1;margin-right:0.5em}']),
 				E('p', {}, [_('本頁只負責產生 IP 集合檔，不動防火牆任何規則。')]),
-				E('p', {}, [_('生效方式：SSH 把集合掛到防火牆規則（LuCI 無集合欄位），例：')]),
-				E('pre', {}, ["uci set firewall.@redirect[0].ipset='集合名稱'\nuci commit firewall\nfw4 reload"])
+				E('p', {}, [_('生效方式：網路→防火牆→連接埠轉發→新增→進階設定→IPSet 下拉選集合，存檔套用。')]),
+				E('p', {}, [_('備用（SSH）：uci set firewall.@redirect[N].ipset＝集合名稱，commit 後 fw4 reload。')])
 			]);
 		};
 
@@ -546,7 +532,6 @@ return view.extend({
 				return b;
 			};
 			return E('div', { 'style': 'display:flex;align-items:center;gap:0.5em;flex-wrap:wrap' }, [
-				E('span', { 'style': 'flex:1' }, [_('註：A1（匿名代理）／A2（衛星）無資料來源，未列入。')]),
 				mkbtn('/usr/bin/countryallow-fetch', _('立即更新 IP 集合'), 'IP 集合已更新（僅抓檔，未合併重載）', false),
 				mkbtn('/usr/bin/countryallow-update', _('立即更新並合併'), '已成功更新並合併（含白名單）', false),
 				mkbtn(null, _('儲存設定'), '設定已儲存（排程已同步）', true)
@@ -574,29 +559,75 @@ return view.extend({
 			return E('div', {}, [clr, pre]);
 		};
 
-		/* ---- 登入防護籤（獨立區塊：只共用 tab 殼，後端走 countryallow-ban*） ---- */
+		/* ---- 登入防護籤（7 列緊湊版：短欄併列、清單獨佔） ---- */
 		o = s.taboption('ban', form.Flag, 'ban_enabled', _('啟用登入防護'));
 		o.default = '1';
 		o.rmempty = false;
 		o.description = _('關閉即停掉防護服務，已封鎖的不自動解封。');
 
-		var banNum = function(name, title, min, max, def, desc) {
-			var vo = s.taboption('ban', form.Value, name, _(title));
-			vo.datatype = 'range(' + min + ',' + max + ')';
-			vo.default = String(def);
-			vo.rmempty = false;
-			vo.description = _(desc);
-			return vo;
+		var banState = { maxretry: '8', findtime: '5', bantime: '2', web: '1', ssh: '1', ddnsint: '3', banint: '60' };
+		var banClamp = function(v, lo, hi, def) {
+			v = parseInt(v, 10);
+			if (isNaN(v))
+				return def;
+			if (v < lo)
+				return String(lo);
+			if (v > hi)
+				return String(hi);
+			return String(v);
 		};
-		banNum('ban_maxretry', _('失敗幾次封鎖'), 1, 100, 8, _('同一 IP 在時間窗內失敗達此次數即封鎖。'));
-		banNum('ban_findtime', _('時間窗（分鐘）'), 1, 60, 5, _('往回看幾分鐘的日誌。'));
-		banNum('ban_bantime', _('封鎖多久（小時）'), 1, 72, 2, _('到期 nft 自動解封。'));
-		o = s.taboption('ban', form.Flag, 'ban_web', _('防護 LuCI 網頁登入'));
-		o.default = '1';
-		o.rmempty = false;
-		o = s.taboption('ban', form.Flag, 'ban_ssh', _('防護 SSH 登入'));
-		o.default = '1';
-		o.rmempty = false;
+		var pushBan = function() {
+			uci.set('countryallow', 'main', 'ban_maxretry', banClamp(banState.maxretry, 1, 100, '8'));
+			uci.set('countryallow', 'main', 'ban_findtime', banClamp(banState.findtime, 1, 60, '5'));
+			uci.set('countryallow', 'main', 'ban_bantime', banClamp(banState.bantime, 1, 72, '2'));
+			uci.set('countryallow', 'main', 'ban_web', banState.web === '1' ? '1' : '0');
+			uci.set('countryallow', 'main', 'ban_ssh', banState.ssh === '1' ? '1' : '0');
+			uci.set('countryallow', 'main', 'ddns_interval', banClamp(banState.ddnsint, 1, 60, '3'));
+			uci.set('countryallow', 'main', 'ban_interval', banClamp(banState.banint, 5, 300, '60'));
+		};
+		var numIn = function(val, min, max, cb) {
+			var inp = E('input', { 'type': 'number', 'min': String(min), 'max': String(max), 'value': val, 'style': 'width:5em;margin-right:0.3em' });
+			inp.addEventListener('change', function() { cb(inp.value); });
+			return inp;
+		};
+		var flagIn = function(checked, cb) {
+			var cbx = E('input', { 'type': 'checkbox', 'style': 'margin-right:0.3em' });
+			if (checked === '1')
+				cbx.checked = true;
+			cbx.addEventListener('change', function() { cb(cbx.checked ? '1' : '0'); });
+			return cbx;
+		};
+		var banRow = function(cells) {
+			var div = E('div', { 'class': 'cbi-value' }, []);
+			cells.forEach(function(c, i) {
+				if (i > 0)
+					div.appendChild(E('span', { 'style': 'margin:0 1em' }, [' ']));
+				div.appendChild(E('label', { 'class': 'cbi-value-title', 'style': 'width:auto;flex:none;margin-right:0.4em' }, [c[0]]));
+				div.appendChild(E('div', { 'class': 'cbi-value-field', 'style': 'display:inline-block' }, [c[1]]));
+			});
+			return div;
+		};
+
+		o = s.taboption('ban', form.DummyValue, '_banthresh');
+		o.render = function(section_id) {
+			banState.maxretry = uci.get('countryallow', 'main', 'ban_maxretry') || '8';
+			banState.findtime = uci.get('countryallow', 'main', 'ban_findtime') || '5';
+			banState.bantime = uci.get('countryallow', 'main', 'ban_bantime') || '2';
+			return banRow([
+				[_('失敗幾次封鎖'), numIn(banState.maxretry, 1, 100, function(v) { banState.maxretry = v; })],
+				[_('時間窗（分鐘）'), numIn(banState.findtime, 1, 60, function(v) { banState.findtime = v; })],
+				[_('封鎖多久（小時）'), numIn(banState.bantime, 1, 72, function(v) { banState.bantime = v; })]
+			]);
+		};
+		o = s.taboption('ban', form.DummyValue, '_banscope');
+		o.render = function(section_id) {
+			banState.web = uci.get('countryallow', 'main', 'ban_web') || '1';
+			banState.ssh = uci.get('countryallow', 'main', 'ban_ssh') || '1';
+			return banRow([
+				[_('防護 LuCI 網頁登入'), flagIn(banState.web, function(v) { banState.web = v; })],
+				[_('防護 SSH 登入'), flagIn(banState.ssh, function(v) { banState.ssh = v; })]
+			]);
+		};
 		o = s.taboption('ban', form.DynamicList, 'ban_exempt', _('永久免封清單'));
 		o.validate = function(section_id, value) {
 			if (!value || !value.trim())
@@ -609,11 +640,25 @@ return view.extend({
 		};
 		o.rmempty = true;
 		o.description = _('這些永遠不封（預设有保留段＋內網）。白名單集合與 DDNS 追隨自動免封，不用填在這。');
-		o = s.taboption('ban', form.Value, 'ban_interval', _('巡邏間隔（秒）'));
-		o.datatype = 'range(5,300)';
-		o.default = '60';
-		o.rmempty = false;
-		o.description = _('幾秒翻一次登入日誌。越短封越快，一個巡邏間隔內一定抓到。');
+		o = s.taboption('ban', form.DynamicList, 'company_ddns', _('DDNS 白名單清單'));
+		o.validate = function(section_id, value) {
+			if (!value || !value.trim())
+				return true;
+			if (!/^(?=.{1,253}$)[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)+$/.test(value.trim()))
+				return _('請輸入合法網域名稱（如 home.example.org）');
+			return true;
+		};
+		o.rmempty = true;
+		o.description = _('可新增多筆；每筆獨立追 IP。本清單只適用防護免封，不動 IP 集合。');
+		o = s.taboption('ban', form.DummyValue, '_banperiod');
+		o.render = function(section_id) {
+			banState.ddnsint = uci.get('countryallow', 'main', 'ddns_interval') || '3';
+			banState.banint = uci.get('countryallow', 'main', 'ban_interval') || '60';
+			return banRow([
+				[_('DDNS 檢查間隔（分鐘）'), numIn(banState.ddnsint, 1, 60, function(v) { banState.ddnsint = v; })],
+				[_('巡邏間隔（秒）'), numIn(banState.banint, 5, 300, function(v) { banState.banint = v; })]
+			]);
+		};
 		o = s.taboption('ban', form.Value, 'ban_wan_if', _('外網介面（自動偵測）'));
 		o.validate = function(section_id, value) {
 			if (!value || !value.trim())
@@ -652,6 +697,7 @@ return view.extend({
 				}).catch(function() {});
 			};
 			var saveBan = function() {
+				pushBan();
 				return map.save(null, true).then(function() {
 					return uci.apply();
 				}).then(function() {

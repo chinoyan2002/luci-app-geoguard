@@ -9,9 +9,18 @@ if (/\.on\s*\(\s*['"]save['"]/.test(code)) {
   process.exit(1);
 }
 if (/setname[\s\S]{0,200}uciname/.test(code)) {
-  console.error('HARNESS-FAIL: setname 不可用 uciname（連字號會被擋）');
+  console.error('HARNESS-FAIL: setname 用了 uciname 驗證（含連字號會炸）');
   process.exit(1);
 }
+if (!/var VERSION = '\d+\.\d+\.\d+'/.test(code)) {
+  console.error('HARNESS-FAIL: 缺 VERSION 常數');
+  process.exit(1);
+}
+if (code.indexOf('IPs 設定') < 0) {
+  console.error('HARNESS-FAIL: 缺 IPs 設定籤名');
+  process.exit(1);
+}
+console.log('version+tabname OK');
 
 const NODES = [];
 function textOf(n) {
@@ -322,12 +331,11 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
     console.error('HARNESS-FAIL: 搜尋框不在標頭列');
     process.exit(1);
   }
-  // 動作列：A1 註＋三鍵同父層
-  const footNote = NODES.find((n) => n.tag === 'span' && n.textContent.indexOf('A1') >= 0);
+  // 動作列：三鍵同父層（A1 註記已刪除）
   const abtns = ['立即更新 IP 集合', '立即更新並合併', '儲存設定'].map((t) =>
     NODES.find((n) => n.tag === 'button' && n.textContent === t));
-  if (!footNote || abtns.some((b) => !b) ||
-      !(footNote.parent === abtns[0].parent && abtns[0].parent === abtns[1].parent &&
+  if (abtns.some((b) => !b) ||
+      !(abtns[0].parent && abtns[0].parent === abtns[1].parent &&
         abtns[1].parent === abtns[2].parent)) {
     console.error('HARNESS-FAIL: 底部動作列未同列');
     process.exit(1);
@@ -341,8 +349,8 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
   console.log('header-row + css OK');
   // 11. 自動更新 checkbox 取消 → 存檔應寫 0；儲存設定鍵只存檔不跑更新
   const autoBoxes = NODES.filter((n) => n.tag === 'input' && n.attrs.type === 'checkbox' && !n.attrs.value);
-  // valueless checkboxes: header allCb + autoCb；取最後一個（排程區較晚建立）
-  const autoCb = autoBoxes[autoBoxes.length - 1];
+  // valueless checkboxes 依建立順序：header allCb、排程 autoCb、防護 web、ssh；取第 2 個
+  const autoCb = autoBoxes[1];
   if (!autoCb) { console.error('HARNESS-FAIL: 找不到自動更新 checkbox'); process.exit(1); }
   autoCb.checked = false;
   await autoCb.fire('change');
@@ -361,19 +369,49 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
   // 12. 防護籤：ban 欄位存在（taboption 有名）＋兩鍵同列＋行為
   const banOpts = OPTS.filter((o) => o._tab === 'ban' && o._name);
   const banNames = banOpts.map((o) => o._name);
-  for (const need of ['ban_enabled', 'ban_maxretry', 'ban_findtime', 'ban_bantime', 'ban_web', 'ban_ssh', 'ban_exempt', 'ban_interval', 'ban_wan_if', '_bannote', '_banstatus', '_banactions']) {
+  for (const need of ['ban_enabled', '_banthresh', '_banscope', 'ban_exempt', 'company_ddns', '_banperiod', 'ban_wan_if', '_bannote', '_banstatus', '_banactions']) {
     if (!banNames.includes(need)) {
       console.error('HARNESS-FAIL: 防護籤缺欄位 ' + need + ' (有: ' + JSON.stringify(banNames) + ')');
       process.exit(1);
     }
   }
   console.log('ban-fields OK');
+  // 12a. 籤順：登入防護 → settings → log
+  const tabOrder = Object.keys(sectionRenders[0]._tabs);
+  if (JSON.stringify(tabOrder) !== JSON.stringify(['ban', 'settings', 'log'])) {
+    console.error('HARNESS-FAIL: 籤順錯誤: ' + JSON.stringify(tabOrder));
+    process.exit(1);
+  }
+  console.log('tab-order OK');
+  // 12a2. 防護籤列順：enabled, thresh, scope, exempt, ddns, period, wan, note, status, actions
+  const banSeq = OPTS.filter((o) => o._tab === 'ban').map((o) => o._name);
+  const wantSeq = ['ban_enabled', '_banthresh', '_banscope', 'ban_exempt', 'company_ddns', '_banperiod', 'ban_wan_if', '_bannote', '_banstatus', '_banactions'];
+  if (JSON.stringify(banSeq) !== JSON.stringify(wantSeq)) {
+    console.error('HARNESS-FAIL: 防護列順錯誤: ' + JSON.stringify(banSeq));
+    process.exit(1);
+  }
+  console.log('ban-row-order OK');
+  // 12a3. 併列：number 輸入 ≥5 且三列 DummyValue 有渲染
+  const numIns = NODES.filter((n) => n.tag === 'input' && n.attrs.type === 'number');
+  if (numIns.length < 5) {
+    console.error('HARNESS-FAIL: 數字輸入不足: ' + numIns.length);
+    process.exit(1);
+  }
+  console.log('ban-rows OK');
   // 12b. 防護籤：DDNS 清單＋間隔欄位存在（已從設定籤搬家）
   const banOpts2 = OPTS.filter((o) => o._tab === 'ban' && o._name);
   const banNames2 = banOpts2.map((o) => o._name);
-  for (const need of ['company_ddns', 'ddns_interval']) {
+  for (const need of ['company_ddns']) {
     if (!banNames2.includes(need)) {
       console.error('HARNESS-FAIL: 防護籤缺DDNS欄位 ' + need);
+      process.exit(1);
+    }
+  }
+  // ddns_interval 是併列自訂輸入：用 pushBan 寫入斷言（見 ban-actions）
+  const numLabels = NODES.filter((n) => n.tag === 'label').map((n) => n.textContent);
+  for (const need of ['DDNS 檢查間隔', '巡邏間隔']) {
+    if (!numLabels.some((t) => t.indexOf(need) >= 0)) {
+      console.error('HARNESS-FAIL: 併列缺標籤 ' + need);
       process.exit(1);
     }
   }
@@ -409,6 +447,13 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
   if (!banExecs.includes('/etc/init.d/luci-ban') || !banExecs.includes('/usr/bin/countryallow-ban-unban') || !banExecs.includes('/usr/bin/countryallow-ban-guard')) {
     console.error('HARNESS-FAIL: 防護按鍵未打到後端: ' + JSON.stringify(banExecs));
     process.exit(1);
+  }
+  // pushBan：存檔後 store 應有併列欄位值
+  for (const k of ['ban_maxretry', 'ban_findtime', 'ban_bantime', 'ban_web', 'ban_ssh', 'ddns_interval', 'ban_interval']) {
+    if (!(k in store.countryallow.main)) {
+      console.error('HARNESS-FAIL: pushBan 未寫入 ' + k);
+      process.exit(1);
+    }
   }
   console.log('ban-actions OK');
   console.log('HARNESS-DONE');
