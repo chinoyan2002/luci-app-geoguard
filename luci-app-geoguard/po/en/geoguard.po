@@ -68,14 +68,8 @@ msgstr "Whitelist beyond countries: IP / CIDR / Range"
 msgid "格式：單一 IP、CIDR、A-B 範圍。國家全空＋有 IP＝純白名單。"
 msgstr "Formats: single IP, CIDR, A-B range. No country + IPs = pure whitelist."
 
-msgid "主要訂閱源"
-msgstr "Primary feed"
-
 msgid "{cc} 會換成國碼小寫，{CC} 大寫。"
 msgstr "{cc} becomes the lowercase code, {CC} uppercase."
-
-msgid "備用訂閱源"
-msgstr "Backup feed"
 
 msgid "失敗改抓備用；抓不到沿用舊檔。"
 msgstr "Falls back on failure; keeps the old file if both fail."
@@ -152,17 +146,11 @@ msgstr "Clear Update History"
 msgid "更新歷史已清除"
 msgstr "Update history cleared"
 
-msgid "啟用登入防護"
-msgstr "Enable login guard"
-
 msgid "關閉即停掉防護服務，已封鎖的不自動解封。"
 msgstr "Disabling stops the guard service; active bans stay until expiry."
 
 msgid "失敗幾次封鎖"
 msgstr "Fails to ban"
-
-msgid "時間窗（分鐘）"
-msgstr "Window (min)"
 
 msgid "封鎖多久（小時）"
 msgstr "Ban time (hours)"
@@ -172,9 +160,6 @@ msgstr "Guard LuCI web login"
 
 msgid "防護 SSH 登入"
 msgstr "Guard SSH login"
-
-msgid "永久免封清單"
-msgstr "Permanent allowlist"
 
 msgid "請輸入 IP 或 CIDR（如 192.168.0.0/16）"
 msgstr "Enter an IP or CIDR (e.g. 192.168.0.0/16)"
@@ -193,9 +178,6 @@ msgstr "Add multiple entries; each tracked separately. For guard exemption only;
 
 msgid "DDNS 檢查間隔（分鐘）"
 msgstr "DDNS check interval (min)"
-
-msgid "巡邏間隔（秒）"
-msgstr "Scan interval (sec)"
 
 msgid "外網介面（自動偵測）"
 msgstr "WAN interface (auto-detect)"
@@ -224,11 +206,29 @@ msgstr "All unbanned"
 msgid "儲存防護設定並重啟"
 msgstr "Save & Restart Guard"
 
-msgid "全部解封"
-msgstr "Unban All"
-
 msgid "GeoGuard"
 msgstr "GeoGuard"
 msgid "國門守衛 GeoGuard Ver:"
 msgstr "GeoGuard Ver:"
+
+msgid "永不封鎖的白名單"
+msgstr "Never-block whitelist"
+
+msgid "在幾（分鐘）內"
+msgstr "Within (minutes)"
+
+msgid "檢視記錄並封鎖的間隔（秒）"
+msgstr "Log review and ban interval (sec)"
+
+msgid "P地理定位-主要訂閱源"
+msgstr "P Geolocation - Primary Feed"
+
+msgid "P地理定位-備用訂閱源"
+msgstr "P Geolocation - Backup Feed"
+
+msgid "啟用此選項來封鎖登入失敗次數過多的 IP 位址"
+msgstr "Enable this option to block IP addresses with too many failed logins"
+
+msgid "解除所有IP的封鎖"
+msgstr "Unban all IPs"
 

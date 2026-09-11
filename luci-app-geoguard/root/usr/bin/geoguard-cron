@@ -10,7 +10,7 @@ BASE_DIR="/etc/luci-uploads"
 # DDNS 白名單：靜態行常駐（任何存檔路徑都刪不掉它；無清單時腳本秒退）。
 # 間隔讀 UCI（預設 3 分）；清單空但 state 有貨＝剛被清空→跑一次 purge。
 DDNS_I=$(uci -q get geoguard.main.ddns_interval 2>/dev/null)
-case "$DDNS_I" in ''|*[!0-9]*) DDNS_I=3 ;; esac
+case "$DDNS_I" in ''|*[!0-9]*) DDNS_I=30 ;; esac
 [ "$DDNS_I" -lt 1 ] && DDNS_I=1
 [ "$DDNS_I" -gt 60 ] && DDNS_I=60
 echo "*/$DDNS_I * * * * /usr/bin/geoguard-ddns" >> "$CRON_FILE"

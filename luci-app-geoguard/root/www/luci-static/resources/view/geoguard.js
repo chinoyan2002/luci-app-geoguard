@@ -5,7 +5,7 @@
 'require ui';
 'require uci';
 
-var VERSION = '2.0.0';
+var VERSION = '2.0.1';
 var fmt = function(s) {
 	var args = Array.prototype.slice.call(arguments, 1);
 	var i = 0;
@@ -104,7 +104,7 @@ var CONTINENTS = [
 var countryState = {};
 var wlState = [];
 var countsDiv = null;
-var schedState = { freq: 'daily', hour: '3', min: '10', auto: '1' };
+var schedState = { freq: 'weekly', hour: '6', min: '0', auto: '1' };
 var OLD_GROUPS = ['asia', 'europe', 'africa', 'northamerica', 'southamerica', 'oceania'];
 
 function wlCheck(v) {
@@ -255,6 +255,8 @@ return view.extend({
 					})(CONTINENTS[i][2][j]);
 				}
 			}
+			rows.sort(function(a, b) { return a.cc < b.cc ? -1 : (a.cc > b.cc ? 1 : 0); });
+			rows.forEach(function(r) { tbody.appendChild(r.el); });
 
 			var allCb = E('input', { 'type': 'checkbox' });
 			allCb.addEventListener('change', function() {
@@ -397,11 +399,11 @@ return view.extend({
 			]);
 		};
 
-		o = s.taboption('settings', form.Value, 'src_primary', _('主要訂閱源'));
+		o = s.taboption('settings', form.Value, 'src_primary', _('P地理定位-主要訂閱源'));
 		o.default = 'https://www.ipdeny.com/ipblocks/data/aggregated/{cc}-aggregated.zone';
 		o.rmempty = false;
 		o.description = _('{cc} 會換成國碼小寫，{CC} 大寫。');
-		o = s.taboption('settings', form.Value, 'src_backup', _('備用訂閱源'));
+		o = s.taboption('settings', form.Value, 'src_backup', _('P地理定位-備用訂閱源'));
 		o.default = 'https://raw.githubusercontent.com/ipverse/country-ip-blocks/master/country/{cc}/ipv4-aggregated.txt';
 		o.rmempty = false;
 		o.description = _('失敗改抓備用；抓不到沿用舊檔。');
@@ -427,9 +429,9 @@ return view.extend({
 
 		o = s.taboption('settings', form.DummyValue, '_sched');
 		o.render = function(section_id) {
-			var freq = uci.get('geoguard', 'main', 'update_freq') || 'daily';
-			var hour = uci.get('geoguard', 'main', 'update_hour') || '3';
-			var min = uci.get('geoguard', 'main', 'update_min') || '10';
+			var freq = uci.get('geoguard', 'main', 'update_freq') || 'weekly';
+			var hour = uci.get('geoguard', 'main', 'update_hour') || '6';
+			var min = uci.get('geoguard', 'main', 'update_min') || '0';
 			schedState.freq = freq;
 			schedState.hour = hour;
 			schedState.min = min;
@@ -479,7 +481,7 @@ return view.extend({
 		o = s.taboption('settings', form.DummyValue, '_note');
 		o.render = function(section_id) {
 			return E('div', { 'class': 'cbi-section' }, [
-				E('style', {}, ['#cbi-geoguard input.cbi-input-text{width:100%;max-width:1024px}#cbi-geoguard .cbi-value-title{width:300px;flex:0 0 300px;white-space:nowrap}#cbi-geoguard .cbi-value-field .btn{width:auto}#cbi-geoguard table.cbi-section-table td,#cbi-geoguard table.cbi-section-table th{padding:3px 6px}#cbi-geoguard p{margin:0.3em 0}#cbi-geoguard .cbi-dynlist{width:100%;max-width:none}#cbi-geoguard .cbi-dynlist .add-item{display:flex}#cbi-geoguard .cbi-dynlist .add-item input{flex:1;margin-right:0.5em}']),
+				E('style', {}, ['#cbi-geoguard input.cbi-input-text{width:100%;max-width:1024px}#cbi-geoguard .cbi-value-title{width:300px;flex:0 0 300px;white-space:nowrap;text-align:left!important}#cbi-geoguard .cbi-value-field .btn{width:auto}#cbi-geoguard table.cbi-section-table td,#cbi-geoguard table.cbi-section-table th{padding:3px 6px;text-align:left!important}#cbi-geoguard p{margin:0.3em 0;text-align:left}#cbi-geoguard .cbi-dynlist{width:100%;max-width:none}#cbi-geoguard .cbi-dynlist .add-item{display:flex}#cbi-geoguard .cbi-dynlist .add-item input{flex:1;margin-right:0.5em}#cbi-geoguard .cbi-value label.cbi-value-title{width:auto;text-align:left!important}#cbi-geoguard div.cbi-value{text-align:left}']),
 				E('p', {}, [_('本頁只負責產生 IP 集合檔，不動防火牆任何規則。')]),
 				E('p', {}, [_('生效方式：網路→防火牆→連接埠轉發→新增→進階設定→IPSet 下拉選集合，存檔套用。')]),
 				E('p', {}, [_('備用（SSH）：uci set firewall.@redirect[N].ipset＝集合名稱，commit 後 fw4 reload。')])
@@ -565,7 +567,7 @@ return view.extend({
 		};
 
 		/* ---- 登入防護籤（7 列緊湊版：短欄併列、清單獨佔） ---- */
-		o = s.taboption('ban', form.Flag, 'ban_enabled', _('啟用登入防護'));
+		o = s.taboption('ban', form.Flag, 'ban_enabled', _('啟用此選項來封鎖登入失敗次數過多的 IP 位址'));
 		o.default = '1';
 		o.rmempty = false;
 		o.description = _('關閉即停掉防護服務，已封鎖的不自動解封。');
@@ -587,7 +589,7 @@ return view.extend({
 			uci.set('geoguard', 'main', 'ban_bantime', banClamp(banState.bantime, 1, 72, '2'));
 			uci.set('geoguard', 'main', 'ban_web', banState.web === '1' ? '1' : '0');
 			uci.set('geoguard', 'main', 'ban_ssh', banState.ssh === '1' ? '1' : '0');
-			uci.set('geoguard', 'main', 'ddns_interval', banClamp(banState.ddnsint, 1, 60, '3'));
+			uci.set('geoguard', 'main', 'ddns_interval', banClamp(banState.ddnsint, 1, 60, '30'));
 			uci.set('geoguard', 'main', 'ban_interval', banClamp(banState.banint, 5, 300, '60'));
 		};
 		var numIn = function(val, min, max, cb) {
@@ -619,8 +621,8 @@ return view.extend({
 			banState.findtime = uci.get('geoguard', 'main', 'ban_findtime') || '5';
 			banState.bantime = uci.get('geoguard', 'main', 'ban_bantime') || '2';
 			return banRow([
+				[_('在幾（分鐘）內'), numIn(banState.findtime, 1, 60, function(v) { banState.findtime = v; })],
 				[_('失敗幾次封鎖'), numIn(banState.maxretry, 1, 100, function(v) { banState.maxretry = v; })],
-				[_('時間窗（分鐘）'), numIn(banState.findtime, 1, 60, function(v) { banState.findtime = v; })],
 				[_('封鎖多久（小時）'), numIn(banState.bantime, 1, 72, function(v) { banState.bantime = v; })]
 			]);
 		};
@@ -633,7 +635,7 @@ return view.extend({
 				[_('防護 SSH 登入'), flagIn(banState.ssh, function(v) { banState.ssh = v; })]
 			]);
 		};
-		o = s.taboption('ban', form.DynamicList, 'ban_exempt', _('永久免封清單'));
+		o = s.taboption('ban', form.DynamicList, 'ban_exempt', _('永不封鎖的白名單'));
 		o.validate = function(section_id, value) {
 			if (!value || !value.trim())
 				return true;
@@ -657,11 +659,11 @@ return view.extend({
 		o.description = _('可新增多筆；每筆獨立追 IP。本清單只適用防護免封，不動 IP 集合。');
 		o = s.taboption('ban', form.DummyValue, '_banperiod');
 		o.render = function(section_id) {
-			banState.ddnsint = uci.get('geoguard', 'main', 'ddns_interval') || '3';
+			banState.ddnsint = uci.get('geoguard', 'main', 'ddns_interval') || '30';
 			banState.banint = uci.get('geoguard', 'main', 'ban_interval') || '60';
 			return banRow([
 				[_('DDNS 檢查間隔（分鐘）'), numIn(banState.ddnsint, 1, 60, function(v) { banState.ddnsint = v; })],
-				[_('巡邏間隔（秒）'), numIn(banState.banint, 5, 300, function(v) { banState.banint = v; })]
+				[_('檢視記錄並封鎖的間隔（秒）'), numIn(banState.banint, 5, 300, function(v) { banState.banint = v; })]
 			]);
 		};
 		o = s.taboption('ban', form.Value, 'ban_wan_if', _('外網介面（自動偵測）'));
@@ -738,7 +740,7 @@ return view.extend({
 			};
 			return E('div', { 'style': 'display:flex;align-items:center;gap:0.5em;flex-wrap:wrap' }, [
 				mkb(_('儲存防護設定並重啟'), saveBan, 'cbi-button-action'),
-				mkb(_('全部解封'), unbanAll, 'cbi-button-neutral')
+				mkb(_('解除所有IP的封鎖'), unbanAll, 'cbi-button-neutral')
 			]);
 		};
 

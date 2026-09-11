@@ -409,12 +409,39 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
   }
   // ddns_interval 是併列自訂輸入：用 pushBan 寫入斷言（見 ban-actions）
   const numLabels = NODES.filter((n) => n.tag === 'label').map((n) => n.textContent);
-  for (const need of ['DDNS 檢查間隔', '巡邏間隔']) {
+  // 自訂列標籤走 DOM；框架欄位標題走原始碼（含 po msgid 一致性由 i18n-check 管）
+  for (const need of ['檢視記錄並封鎖的間隔', '在幾（分鐘）內']) {
     if (!numLabels.some((t) => t.indexOf(need) >= 0)) {
       console.error('HARNESS-FAIL: 併列缺標籤 ' + need);
       process.exit(1);
     }
   }
+  for (const need of ['永不封鎖的白名單', '解除所有IP的封鎖', 'P地理定位-主要訂閱源', 'P地理定位-備用訂閱源', '啟用此選項來封鎖登入失敗次數過多的 IP 位址']) {
+    if (code.indexOf(need) < 0) {
+      console.error('HARNESS-FAIL: 缺新標籤 ' + need);
+      process.exit(1);
+    }
+  }
+  // 國家列按國碼遞增
+  // 國家列按國碼遞增（走 tbody 樹順序＋去重；stub append 不搬移，註冊表順序不準）
+  const tbody = NODES.find((n) => n.tag === 'tbody');
+  const trs = tbody ? tbody.children.filter((c) => c && c.tag === 'tr') : [];
+  const seen = new Set();
+  const uniqRev = [];
+  for (let i = trs.length - 1; i >= 0; i--) {
+    if (!seen.has(trs[i])) { seen.add(trs[i]); uniqRev.push(trs[i]); }
+  }
+  const ordered = uniqRev.reverse();
+  const codeCells = ordered.map((tr) => {
+    const tds = (tr.children || []).filter((c) => c && c.tag === 'td');
+    return tds.length > 1 ? (tds[1].textContent || '').trim().toLowerCase() : '';
+  }).filter((s) => /^[a-z]{2}$/.test(s));
+  const sortedCodes = codeCells.slice().sort();
+  if (codeCells.length < 200 || JSON.stringify(codeCells) !== JSON.stringify(sortedCodes)) {
+    console.error('HARNESS-FAIL: 國家列未按國碼排序');
+    process.exit(1);
+  }
+  console.log('labels+sort OK');
   const setOpts = OPTS.filter((o) => o._tab === 'settings' && o._name);
   const setNames = setOpts.map((o) => o._name);
   if (setNames.includes('company_ddns') || setNames.includes('ddns_interval')) {
@@ -434,7 +461,7 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
   }
   console.log('bannote-dynamic OK');
   const banSaveBtn = btnByText('儲存防護設定並重啟');
-  const unbanBtn = btnByText('全部解封');
+  const unbanBtn = btnByText('解除所有IP的封鎖');
   if (!banSaveBtn || !unbanBtn || banSaveBtn.parent !== unbanBtn.parent) {
     console.error('HARNESS-FAIL: 防護按鍵缺失或不同列');
     process.exit(1);
