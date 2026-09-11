@@ -8,6 +8,18 @@ STATE="$BASE_DIR/company-ddns.list"
 HIST="$BASE_DIR/history.log"
 [ -f "$STATE" ] || : > "$STATE"
 
+# cron 自癒：靜態行被任何路徑弄丟／間隔被改都自動修回來
+DI=$(uci -q get countryallow.main.ddns_interval 2>/dev/null)
+case "$DI" in ''|*[!0-9]*) DI=3 ;; esac
+[ "$DI" -lt 1 ] && DI=1
+[ "$DI" -gt 60 ] && DI=60
+DLINE="*/$DI * * * * /usr/bin/countryallow-ddns"
+grep -qxF "$DLINE" /etc/crontabs/root 2>/dev/null || {
+  sed -i '\#countryallow-ddns#d' /etc/crontabs/root 2>/dev/null
+  echo "$DLINE" >> /etc/crontabs/root
+  /etc/init.d/cron restart >/dev/null 2>&1
+}
+
 resolve() {
   nslookup "$1" 2>/dev/null \
     | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}' \

@@ -5,7 +5,12 @@
 'require ui';
 'require uci';
 
-var VERSION = '1.0.0';
+var VERSION = '1.1.0';
+var fmt = function(s) {
+	var args = Array.prototype.slice.call(arguments, 1);
+	var i = 0;
+	return String(s).replace(/%s/g, function() { return (i < args.length) ? args[i++] : ''; });
+};
 var CONTINENTS = [
 	['asia', '亞洲', [
 		['af', '阿富汗', 'AFGHANISTAN'], ['am', '亞美尼亞', 'ARMENIA'], ['az', '亞塞拜然', 'AZERBAIJAN'],
@@ -176,7 +181,7 @@ return view.extend({
 			var p = (countsText || '').split(/\s+/);
 			if (p.length < 4 || !p[0])
 				return _('目前啟用的集合：尚無資料');
-			return _('目前啟用：') + p[0] + '.cidr' + _('（') + p[1] + _(' 行／live ') + p[2] + _(' 段／更新於 ') + p[3].replace('_', ' ') + '）';
+			return fmt(_('目前啟用：%s.cidr（%s 行／live %s 段／更新於 %s）'), p[0], p[1], p[2], p[3].replace('_', ' '));
 		};
 
 		var refreshCounts = function() {
@@ -514,12 +519,12 @@ return view.extend({
 						ui.addNotification(null, E('p', _(okmsg)), 'info');
 						return refreshCounts();
 					} else {
-						ui.addNotification(null, E('p', _('更新失敗：') + (res.stderr || res.stdout || '未知錯誤')), 'error');
+						ui.addNotification(null, E('p', fmt(_('更新失敗：%s'), res.stderr || res.stdout || _('未知錯誤'))), 'error');
 					}
 				}).catch(function(e) {
 					if (e && e.handled)
 						return;
-					ui.addNotification(null, E('p', _('執行失敗：') + e.message), 'error');
+					ui.addNotification(null, E('p', fmt(_('執行失敗：%s'), e.message)), 'error');
 				});
 			};
 			var mkbtn = function(cmd, title, okmsg, noexec) {
@@ -553,7 +558,7 @@ return view.extend({
 					pre.appendChild(document.createTextNode(res.stdout || ''));
 					ui.addNotification(null, E('p', _('更新歷史已清除')), 'info');
 				}).catch(function(e) {
-					ui.addNotification(null, E('p', _('執行失敗：') + e.message), 'error');
+					ui.addNotification(null, E('p', fmt(_('執行失敗：%s'), e.message)), 'error');
 				});
 			});
 			return E('div', {}, [clr, pre]);
@@ -639,7 +644,7 @@ return view.extend({
 			return true;
 		};
 		o.rmempty = true;
-		o.description = _('這些永遠不封（預设有保留段＋內網）。白名單集合與 DDNS 追隨自動免封，不用填在這。');
+		o.description = _('此清單內的 IP／網段永久免於封鎖。系統預設已含保留位址與內網段。另有兩類自動免封，無需在此重複填寫：IP 白名單（IPs 設定籤）與 DDNS 白名單（本籤下方），後者 IP 變動時自動跟隨。');
 		o = s.taboption('ban', form.DynamicList, 'company_ddns', _('DDNS 白名單清單'));
 		o.validate = function(section_id, value) {
 			if (!value || !value.trim())
@@ -673,7 +678,7 @@ return view.extend({
 		o.render = function(section_id) {
 			var bh = uci.get('countryallow', 'main', 'ban_bantime') || '2';
 			return E('div', { 'class': 'cbi-section' }, [
-				E('p', {}, [_('被封鎖＝整台對他消失：外網進來的所有封包（所有 port、TCP/UDP/ICMP）在源頭全丟，') + bh + _(' 小時自動解封。')])
+				E('p', {}, [fmt(_('被封鎖＝整台對他消失：外網進來的所有封包（所有 port、TCP/UDP/ICMP）在源頭全丟，%s 小時自動解封。'), bh)])
 			]);
 		};
 
@@ -708,10 +713,10 @@ return view.extend({
 					if (res.code === 0)
 						ui.addNotification(null, E('p', _('防護設定已儲存並重啟')), 'info');
 					else
-						ui.addNotification(null, E('p', _('重啟防護失敗：') + (res.stderr || res.stdout || '')), 'error');
+						ui.addNotification(null, E('p', fmt(_('重啟防護失敗：%s'), res.stderr || res.stdout || _('未知錯誤'))), 'error');
 					return refreshBan();
 				}).catch(function(e) {
-					ui.addNotification(null, E('p', _('執行失敗：') + e.message), 'error');
+					ui.addNotification(null, E('p', fmt(_('執行失敗：%s'), e.message)), 'error');
 				});
 			};
 			var unbanAll = function() {
@@ -719,7 +724,7 @@ return view.extend({
 					ui.addNotification(null, E('p', _('已全部解封')), 'info');
 					return refreshBan();
 				}).catch(function(e) {
-					ui.addNotification(null, E('p', _('執行失敗：') + e.message), 'error');
+					ui.addNotification(null, E('p', fmt(_('執行失敗：%s'), e.message)), 'error');
 				});
 			};
 			var mkb = function(title, fn, cls) {

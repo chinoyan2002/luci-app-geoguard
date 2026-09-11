@@ -1,0 +1,25 @@
+# Maintainer: chinoyan <chinoyan2002@users.noreply.github.com>
+pkgname=luci-app-countryallow
+pkgver=1.1.0
+pkgrel=1
+pkgdesc="Country-based IPv4 allow-list sets for firewall4 (LuCI)"
+url="https://github.com/chinoyan2002/Openwrt--IPS-"
+arch="noarch"
+license="MIT"
+depends="firewall4 wget-ssl uhttpd"
+source="payload.tar.gz"
+options="!strip !check"
+subpackages="luci-i18n-countryallow-en:i18n_en"
+
+package() {
+	mkdir -p "$pkgdir"
+	cp -a "$srcdir"/luci-app-countryallow_1.1.0/* "$pkgdir"/
+}
+
+i18n_en() {
+	pkgdesc="English translation for luci-app-countryallow"
+	depends="luci-app-countryallow"
+	mkdir -p "$subpkgdir"/usr/lib/lua/luci/i18n
+	mv "$pkgdir"/usr/lib/lua/luci/i18n/countryallow.en.lmo \
+		"$subpkgdir"/usr/lib/lua/luci/i18n/
+}

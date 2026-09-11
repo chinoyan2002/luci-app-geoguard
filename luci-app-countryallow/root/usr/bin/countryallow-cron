@@ -7,17 +7,14 @@ sed -i '\#countryallow-update#d' "$CRON_FILE" 2>/dev/null
 sed -i '\#countryallow-ddns#d' "$CRON_FILE" 2>/dev/null
 
 BASE_DIR="/etc/luci-uploads"
-# DDNS 白名單：間隔讀 UCI（預設 3 分）；清單空但 state 有貨＝剛被清空→跑一次 purge
+# DDNS 白名單：靜態行常駐（任何存檔路徑都刪不掉它；無清單時腳本秒退）。
+# 間隔讀 UCI（預設 3 分）；清單空但 state 有貨＝剛被清空→跑一次 purge。
 DDNS_I=$(uci -q get countryallow.main.ddns_interval 2>/dev/null)
 case "$DDNS_I" in ''|*[!0-9]*) DDNS_I=3 ;; esac
 [ "$DDNS_I" -lt 1 ] && DDNS_I=1
 [ "$DDNS_I" -gt 60 ] && DDNS_I=60
-if [ -n "$(uci -q get countryallow.main.company_ddns 2>/dev/null)" ]; then
-	echo "*/$DDNS_I * * * * /usr/bin/countryallow-ddns" >> "$CRON_FILE"
-	/usr/bin/countryallow-ddns
-elif [ -s "$BASE_DIR/company-ddns.list" ]; then
-	/usr/bin/countryallow-ddns
-fi
+echo "*/$DDNS_I * * * * /usr/bin/countryallow-ddns" >> "$CRON_FILE"
+/usr/bin/countryallow-ddns
 
 if [ "$(uci -q get countryallow.main.auto_update)" = "1" ]; then
 	FREQ=$(uci -q get countryallow.main.update_freq 2>/dev/null)

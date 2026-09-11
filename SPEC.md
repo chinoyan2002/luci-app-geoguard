@@ -1,6 +1,6 @@
 # 規格書：國家IPS集合建立器 Country Allow List（SPEC v1，2026-09-11）
 
-> UI 版本 Ver:1.0.0（view 頂部 VERSION 常數為準，Makefile PKG_VERSION 同號）。
+> UI 版本 Ver:1.1.0（view 頂部 VERSION 常數為準，Makefile PKG_VERSION 同號）。
 > 版本政策：修 bug 跳 patch（1.0.1），加功能跳 minor（1.1.0），harness 有版本斷言。
 > 籤順：登入防護 → IPs 設定 → 記錄。防護籤 7 列緊湊版（短欄併列、清單獨佔）。
 
