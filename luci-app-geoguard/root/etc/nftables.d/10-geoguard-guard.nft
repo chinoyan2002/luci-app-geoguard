@@ -5,5 +5,6 @@ set geoguard_ban {
 
 chain luci_guard {
 	type filter hook prerouting priority -160; policy accept;
-	iifname "pppoe-wan" tcp dport { 8080, 8081, 2222 } ip saddr @geoguard_ban log prefix "geoguard-ban-drop: " drop
+	iifname "pppoe-wan" ip saddr @geoguard_ban limit rate over 10/minute burst 5 packets log prefix "geoguard-ban-drop: " drop
+	iifname "pppoe-wan" ip saddr @geoguard_ban drop
 }

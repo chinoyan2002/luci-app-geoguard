@@ -44,10 +44,12 @@ def main():
     # Read version from Makefile
     makefile = open(os.path.join(ROOT_DIR, APP, 'Makefile'), encoding='utf-8').read()
     ver = None
+    rel = '1'
     for line in makefile.splitlines():
         if line.startswith('PKG_VERSION:='):
             ver = line.split(':=')[1].strip()
-            break
+        elif line.startswith('PKG_RELEASE:='):
+            rel = line.split(':=')[1].strip()
     assert ver, "Could not determine PKG_VERSION from Makefile"
     print(f"=== Building {APP} v{ver} ===")
 
@@ -84,10 +86,10 @@ def main():
     os.makedirs(os.path.join(stage_dir, 'CONTROL'), exist_ok=True)
 
     for dp, _, filenames in os.walk(APP_ROOT):
-        rel = os.path.relpath(dp, APP_ROOT)
+        relp = os.path.relpath(dp, APP_ROOT)
         for fn in filenames:
             src = os.path.join(dp, fn)
-            dst = os.path.join(stage_dir, rel, fn)
+            dst = os.path.join(stage_dir, relp, fn)
             os.makedirs(os.path.dirname(dst), exist_ok=True)
             shutil.copyfile(src, dst)
 
@@ -97,7 +99,7 @@ def main():
         shutil.copyfile(path, os.path.join(i18n_dir, lmo_name))
 
     control = (f'Package: {APP}\n'
-               f'Version: {ver}-1\n'
+               f'Version: {ver}-{rel}\n'
                'Architecture: all\n'
                'Maintainer: chinoyan\n'
                'Depends: firewall4, wget-ssl, uhttpd\n'
@@ -116,8 +118,8 @@ def main():
         if ti.isdir():
             ti.mode = 0o755
             return ti
-        rel = ti.name[len(arc_prefix):] if ti.name.startswith(arc_prefix) else ti.name
-        if rel.startswith(exec_dirs):
+        relp = ti.name[len(arc_prefix):] if ti.name.startswith(arc_prefix) else ti.name
+        if relp.startswith(exec_dirs):
             ti.mode = 0o755
         else:
             ti.mode = 0o644
@@ -138,7 +140,7 @@ def main():
     pve_run('pct push 201 /tmp/payload.tar.gz /root/aports/payload.tar.gz', timeout=120)
     pve_run('pct push 201 /tmp/APKBUILD /root/aports/APKBUILD', timeout=60)
     build_dir = f'/root/build/{APP}_{ver}'
-    pve_run(f'mkdir -p /root/build && cd /root/build && rm -rf {APP}_{ver} && tar xzf /tmp/payload.tar.gz', timeout=120)
+    pve_run(f'pct exec 201 -- sh -c "mkdir -p /root/build && cd /root/build && rm -rf {APP}_{ver} && tar xzf /root/aports/payload.tar.gz && ls {APP}_{ver}"', timeout=120)
     pve_run(f'pct exec 201 -- sh -c "find {build_dir}/usr/bin {build_dir}/etc/init.d {build_dir}/etc/uci-defaults -type f -exec sh -n {{}} + && echo SH-ALL-OK"', timeout=120)
     pve_run('pct exec 201 -- sh -c "cp /home/builder/.abuild/*.rsa.pub /etc/apk/keys/"', timeout=60)
     pve_run('pct exec 201 -- sh -c "cp /root/aports/payload.tar.gz /root/aports/APKBUILD /home/builder/aports/ && '
@@ -150,12 +152,16 @@ def main():
 
     # 6. Pull artifacts
     pulls = [
-        (f'/home/builder/packages/builder/x86_64/{APP}-{ver}-r1.apk', f'{APP}_{ver}-r1_all.apk'),
-        (f'/home/builder/packages/builder/x86_64/luci-i18n-geoguard-en-{ver}-r1.apk', f'luci-i18n-geoguard-en_{ver}-r1_all.apk'),
-        (f'/home/builder/packages/builder/x86_64/luci-i18n-geoguard-zh-tw-{ver}-r1.apk', f'luci-i18n-geoguard-zh-tw_{ver}-r1_all.apk'),
-        (f'/root/build/{APP}_{ver}-1_all.ipk', f'{APP}_{ver}-1_all.ipk'),
+        (f'/home/builder/packages/builder/x86_64/{APP}-{ver}-r{rel}.apk', f'{APP}_{ver}-r{rel}_all.apk'),
+        (f'/home/builder/packages/builder/x86_64/luci-i18n-geoguard-en-{ver}-r{rel}.apk', f'luci-i18n-geoguard-en_{ver}-r{rel}_all.apk'),
+        (f'/home/builder/packages/builder/x86_64/luci-i18n-geoguard-zh-tw-{ver}-r{rel}.apk', f'luci-i18n-geoguard-zh-tw_{ver}-r{rel}_all.apk'),
         ('/home/builder/.abuild/root-6aa40cae.rsa.pub', 'chinoyan-sign-6aa40cae.rsa.pub'),
     ]
+    # ipkg-build names the file from the source dir (ignores CONTROL release),
+    # so discover the freshly built ipk instead of guessing.
+    fresh_ipk = pve_run(f'pct exec 201 -- sh -c "ls -t /root/build/{APP}_{ver}*.ipk | head -n 1"').strip()
+    assert fresh_ipk.endswith('.ipk'), f'unexpected ipk discovery: {fresh_ipk}'
+    pulls.append((fresh_ipk, f'{APP}_{ver}-{rel}_all.ipk'))
     for src, local in pulls:
         pve_run(f'pct pull 201 {src} /tmp/dl-{local}')
         local_dst = os.path.join(out_dir, local)
