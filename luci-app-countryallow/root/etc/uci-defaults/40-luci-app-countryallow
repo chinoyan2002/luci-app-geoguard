@@ -1,0 +1,6 @@
+#!/bin/sh
+# 40-luci-app-countryallow: enable daily schedule after first install.
+# Config values come from package default /etc/config/countryallow.
+/usr/bin/countryallow-cron 2>/dev/null
+logger -t countryallow "installed, open LuCI Country Allow List and press update-merge once"
+exit 0

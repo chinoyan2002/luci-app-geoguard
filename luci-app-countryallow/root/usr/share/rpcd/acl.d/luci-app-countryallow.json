@@ -1,0 +1,20 @@
+{
+	"luci-app-countryallow": {
+		"description": "Grant access to Country Allow List",
+		"read": {
+			"uci": [ "countryallow" ],
+			"file": {
+				"/etc/luci-uploads/*.cidr": [ "read" ]
+			}
+		},
+		"write": {
+			"uci": [ "countryallow" ],
+			"file": {
+				"/etc/luci-uploads/*.cidr": [ "write" ]
+			},
+			"ubus": {
+				"file": [ "exec" ]
+			}
+		}
+	}
+}

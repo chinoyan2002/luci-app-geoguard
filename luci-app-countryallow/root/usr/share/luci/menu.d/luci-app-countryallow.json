@@ -1,0 +1,13 @@
+{
+	"admin/network/countryallow": {
+		"title": "Country Allow List",
+		"order": 55,
+		"action": {
+			"type": "view",
+			"path": "countryallow"
+		},
+		"depends": {
+			"acl": [ "luci-app-countryallow" ]
+		}
+	}
+}
