@@ -1,5 +1,9 @@
 # 打包說明（給下一個發版的人）
 
+## 一鍵發版腳本
+- `python packaging/build_packages.py`
+  自動編譯 `.lmo`、組裝 payload、執行 modefix、傳送 LXC 201 容器、簽名生成 `.apk` (x3) 與 `.ipk`、回傳至 `packages-<VERSION>/` 並執行校驗。
+
 ## 產線（PVE LXC 201 `apkbuild`，Alpine）
 - `.apk`：`abuild -d`（`depends` 是 OpenWrt 套件名，Alpine 裝不到，一律 `-d` 跳過依賴檢查）
 - `.ipk`：用 `ipkg-build-24.10` 建（官方 24.10 包就是 gzip 包 tar 容器：
