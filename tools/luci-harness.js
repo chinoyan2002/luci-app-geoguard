@@ -580,5 +580,23 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
     process.exit(1);
   }
   console.log('cron-notes OK');
+  // 12h. msgid 禁頭尾空格（尾空格會翻不出來，見 Selected 之禍）
+  const wsRe = /_\(\s*'((?:\\.|[^'\\])*)'\s*\)/g;
+  let wsm;
+  while ((wsm = wsRe.exec(code)) !== null) {
+    const s = wsm[1].replace(/\\'/g, "'");
+    if (s && s !== s.trim()) {
+      console.error('HARNESS-FAIL: msgid 頭尾空格: ' + JSON.stringify(s.slice(0, 40)));
+      process.exit(1);
+    }
+  }
+  console.log('msgid-trim OK');
+  // 12i. 啟用行加粗綠字
+  const countsDivs = NODES.filter((n) => n.tag === 'div' && n.attrs && n.attrs.class === 'country-counts');
+  if (countsDivs.length === 0 || (countsDivs[0].attrs.style || '').indexOf('bold') < 0) {
+    console.error('HARNESS-FAIL: 啟用行未加粗');
+    process.exit(1);
+  }
+  console.log('counts-emphasis OK');
   console.log('HARNESS-DONE');
 })().catch((e) => { console.error('HARNESS-FAIL:', e.stack.split('\n').slice(0, 3).join(' | ')); process.exit(1); });

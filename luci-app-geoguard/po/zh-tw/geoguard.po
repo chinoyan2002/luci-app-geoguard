@@ -27,7 +27,7 @@ msgstr "IPs 設定"
 msgid "Log"
 msgstr "記錄"
 
-msgid "Selected: "
+msgid "Selected:"
 msgstr "已勾選："
 
 msgid "(none selected)"

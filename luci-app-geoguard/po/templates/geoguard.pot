@@ -27,7 +27,7 @@ msgstr ""
 msgid "Log"
 msgstr ""
 
-msgid "Selected: "
+msgid "Selected:"
 msgstr ""
 
 msgid "(none selected)"
