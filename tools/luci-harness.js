@@ -402,6 +402,10 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
     console.error('HARNESS-FAIL: 缺少標題欄/輸入框收窄 CSS');
     process.exit(1);
   }
+  if (styles.indexOf('overflow-wrap:anywhere') < 0 || styles.indexOf('break-all') < 0) {
+    console.error('HARNESS-FAIL: 缺少溢出換行 CSS');
+    process.exit(1);
+  }
   console.log('header-row + css OK');
   // 11. 自動更新 checkbox 取消 → 存檔應寫 0；儲存設定鍵只存檔不跑更新
   const autoBoxes = NODES.filter((n) => n.tag === 'input' && n.attrs.type === 'checkbox' && !n.attrs.value);
