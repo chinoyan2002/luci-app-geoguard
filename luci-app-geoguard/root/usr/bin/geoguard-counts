@@ -13,6 +13,8 @@ if [ -f "$FILE" ]; then
   FDATE=$(date -r "$FILE" '+%F_%T' 2>/dev/null || echo "-")
 fi
 if nft list set inet fw4 "$SETNAME" >/dev/null 2>&1; then
-  LIVE=$(nft list set inet fw4 "$SETNAME" 2>/dev/null | tr ',' '\n' | grep -c '/')
+  # count elements, not slashes (A-B ranges have no '/')
+  LIVE=$(nft list set inet fw4 "$SETNAME" 2>/dev/null | sed -n '/elements = {/,/}/p' | tr -d '{}' | sed 's/elements = //' | tr ',' '\n' | grep -c '[^[:space:]]')
+  [ -z "$LIVE" ] && LIVE=0
 fi
 echo "$SETNAME $FL $LIVE $FDATE"

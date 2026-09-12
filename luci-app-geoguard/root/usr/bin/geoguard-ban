@@ -45,7 +45,7 @@ in_list() {
   BEGIN { needle = i2n(ip); }
   { line = $1;
     if (line ~ /\//) { split(line, a, "/"); b = i2n(a[1]); m = a[2]+0;
-      if (m == 0) { found = 1; exit; }
+      if (m == 0) next;
       if (rshift(needle, 32-m) == rshift(b, 32-m)) { found = 1; exit; } }
     else if (line == ip) { found = 1; exit; } }
   END { exit (found ? 0 : 1); }'

@@ -16,6 +16,7 @@
   2. `APKBUILD` 的 `package()` 用 `cp -a`（`cp -r` 吃掉執行位）
   3. 驗包看外層魔數：ipk 必須是 gzip（`1f 8b`），apk 解開腳本必須 755
 - abuild 不給 root 跑：`builder` 用戶＋`PACKAGER_PRIVKEY` 指 key；`abuild checksum` 每次 payload 變都要重跑
+- 同版重編必須升 `pkgrel`：opkg 認版本相同會跳過不安裝（apk 會重裝），2.1.5 實測公司機「up to date」跳過、被迫 `--force-reinstall`
 - 簽名 key：`root-6aa40cae`，私鑰只在 LXC，公鑰隨包發布（`packages-1.1.0/*.rsa.pub`）
 
 ## 安裝（使用者側）

@@ -5,7 +5,7 @@
 'require ui';
 'require uci';
 
-var VERSION = '2.1.4';
+var VERSION = '2.1.5';
 var fmt = function(s) {
 	var args = Array.prototype.slice.call(arguments, 1);
 	var i = 0;
@@ -103,6 +103,11 @@ var CONTINENTS = [
 
 var countryState = {};
 var wlState = [];
+/* dirty guards: render rebuilds state from uci (clean); only real UI
+   interaction marks dirty. pushCountries never deletes selected/whitelist
+   unless the user actually touched them (unrendered-save data-loss class). */
+var countryDirty = false;
+var wlDirty = false;
 var countsDiv = null;
 var schedState = { freq: 'weekly', hour: '6', min: '0', auto: '1' };
 var nameState = { set: 'allowed-IPList', white: 'CustomAllow' };
@@ -112,7 +117,7 @@ function wlCheck(v) {
 	v = (v || '').trim();
 	var oct = '(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])';
 	var ip = '(' + oct + '\\.){3}' + oct;
-	var re = new RegExp('^' + ip + '(/([0-9]|[12][0-9]|3[0-2]))?$|^' + ip + '-' + ip + '$');
+	var re = new RegExp('^' + ip + '(/([1-9]|[12][0-9]|3[0-2]))?$|^' + ip + '-' + ip + '$');
 	if (!re.test(v))
 		return _('Invalid format: enter a single IP (e.g. 203.0.113.10), CIDR (e.g. 203.0.113.0/24) or range (e.g. 203.0.113.10-203.0.113.50)');
 	return true;
@@ -120,10 +125,12 @@ function wlCheck(v) {
 
 function pushCountries() {
 	var sel = Object.keys(countryState);
-	if (sel.length > 0)
-		uci.set('geoguard', 'main', 'selected', sel);
-	else
-		uci.unset('geoguard', 'main', 'selected');
+	if (countryDirty) {
+		if (sel.length > 0)
+			uci.set('geoguard', 'main', 'selected', sel);
+		else
+			uci.unset('geoguard', 'main', 'selected');
+	}
 	var i;
 	for (i = 0; i < OLD_GROUPS.length; i++)
 		uci.unset('geoguard', 'main', 'sel_' + OLD_GROUPS[i]);
@@ -133,10 +140,12 @@ function pushCountries() {
 	uci.set('geoguard', 'main', 'auto_update', schedState.auto);
 	uci.set('geoguard', 'main', 'setname', nameState.set || 'allowed-IPList');
 	uci.set('geoguard', 'main', 'white_name', nameState.white || 'CustomAllow');
-	if (wlState.length > 0)
-		uci.set('geoguard', 'main', 'whitelist', wlState.slice());
-	else
-		uci.unset('geoguard', 'main', 'whitelist');
+	if (wlDirty) {
+		if (wlState.length > 0)
+			uci.set('geoguard', 'main', 'whitelist', wlState.slice());
+		else
+			uci.unset('geoguard', 'main', 'whitelist');
+	}
 	return uci.save();
 }
 
@@ -156,9 +165,9 @@ return view.extend({
 		return Promise.all([
 			uci.load('geoguard'),
 			fs.exec('/usr/bin/geoguard-status').then(function(res) {
-				return (res.code === 0 && res.stdout) ? res.stdout : '狀態腳本執行失敗';
+				return (res.code === 0 && res.stdout) ? res.stdout : _('Status script failed');
 			}).catch(function(e) {
-				return '狀態腳本執行失敗：' + e.message;
+				return fmt(_('Status script failed: %s'), e.message);
 			}),
 			fs.exec('/usr/bin/geoguard-counts').then(function(res) {
 				return (res.code === 0 && res.stdout) ? res.stdout.trim() : '';
@@ -222,6 +231,7 @@ return view.extend({
 			var cur = uci.get('geoguard', 'main', 'selected') || [];
 			var i, j;
 			countryState = {};
+			countryDirty = false;
 			(function() {
 				var old = ['sel_asia', 'sel_europe', 'sel_africa', 'sel_northamerica', 'sel_southamerica', 'sel_oceania'];
 				for (var k = 0; k < old.length; k++) {
@@ -249,13 +259,14 @@ return view.extend({
 						var cb = E('input', { 'type': 'checkbox', 'value': cc[0] });
 						if (countryState[cc[0]])
 							cb.checked = true;
-						cb.addEventListener('change', function() {
-							if (cb.checked)
-								countryState[cc[0]] = true;
-							else
-								delete countryState[cc[0]];
-							refreshSel();
-						});
+					cb.addEventListener('change', function() {
+						countryDirty = true;
+						if (cb.checked)
+							countryState[cc[0]] = true;
+						else
+							delete countryState[cc[0]];
+						refreshSel();
+					});
 						var tr = E('tr', {}, [
 							E('td', {}, [cb]),
 							E('td', {}, [cc[0].toUpperCase()]),
@@ -271,6 +282,7 @@ return view.extend({
 
 			var allCb = E('input', { 'type': 'checkbox' });
 			allCb.addEventListener('change', function() {
+				countryDirty = true;
 				rows.forEach(function(r) {
 					if (r.el.style.display === 'none')
 						return;
@@ -352,6 +364,7 @@ return view.extend({
 			if (!Array.isArray(cur))
 				cur = [cur];
 			wlState = cur.slice();
+			wlDirty = false;
 			var listBox = E('div', { 'class': 'wl-list' });
 			var errLine = E('div', { 'class': 'wl-error', 'style': 'color:#c00;margin-top:0.3em' }, []);
 			var drawList = function() {
@@ -359,12 +372,13 @@ return view.extend({
 					listBox.removeChild(listBox.firstChild);
 				wlState.forEach(function(v, idx) {
 					var del = E('button', { 'class': 'btn cbi-button cbi-button-neutral' }, [_('Delete')]);
-					del.addEventListener('click', function(ev) {
-						if (ev && ev.preventDefault)
-							ev.preventDefault();
-						wlState.splice(idx, 1);
-						drawList();
-					});
+				del.addEventListener('click', function(ev) {
+					if (ev && ev.preventDefault)
+						ev.preventDefault();
+					wlDirty = true;
+					wlState.splice(idx, 1);
+					drawList();
+				});
 					listBox.appendChild(E('div', { 'style': 'margin-bottom:0.3em' }, [
 						E('span', {}, [v]), E('span', {}, ['  ']), del
 					]));
@@ -376,7 +390,7 @@ return view.extend({
 				if (msg)
 					errLine.appendChild(E('span', {}, [msg]));
 			};
-			var inp = E('input', { 'type': 'text', 'class': 'cbi-input-text', 'placeholder': '例如 203.0.113.10、203.0.113.0/24、203.0.113.10-203.0.113.50', 'style': 'flex:1;margin-right:0.5em' });
+			var inp = E('input', { 'type': 'text', 'class': 'cbi-input-text', 'placeholder': _('e.g. 203.0.113.10, 203.0.113.0/24, 203.0.113.10-203.0.113.50'), 'style': 'flex:1;margin-right:0.5em' });
 			var addBtn = E('button', { 'class': 'btn cbi-button cbi-button-action' }, [_('Add')]);
 			addBtn.addEventListener('click', function(ev) {
 				if (ev && ev.preventDefault)
@@ -389,6 +403,7 @@ return view.extend({
 				}
 				if (wlState.indexOf(v) < 0)
 					wlState.push(v);
+				wlDirty = true;
 				inp.value = '';
 				setErr(null);
 				drawList();
@@ -690,7 +705,7 @@ return view.extend({
 				return true;
 			var oct = '(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])';
 			var ip = '(' + oct + '\\.){3}' + oct;
-			if (!new RegExp('^' + ip + '(/([0-9]|[12][0-9]|3[0-2]))?$').test(value.trim()))
+			if (!new RegExp('^' + ip + '(/([1-9]|[12][0-9]|3[0-2]))?$').test(value.trim()))
 				return _('Enter an IP or CIDR (e.g. 192.168.0.0/16)');
 			return true;
 		};

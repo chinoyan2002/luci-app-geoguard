@@ -162,6 +162,21 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
     if (typeof o.render === 'function') await o.render.call({ map: fakeMap });
   }
 
+  // 0. 未觸碰國家/白名單就存檔：selected/whitelist 不得被動到（防 render 失載刪檔）
+  store.geoguard.main.selected = ['tw'];
+  store.geoguard.main.whitelist = ['10.9.9.9'];
+  const saveEarly = NODES.find((n) => n.tag === 'button' && n.textContent === 'Save Settings');
+  if (!saveEarly) { console.error('HARNESS-FAIL: 找不到儲存設定鍵'); process.exit(1); }
+  await saveEarly.fire('click');
+  if (JSON.stringify(store.geoguard.main.selected) !== JSON.stringify(['tw']) ||
+      JSON.stringify(store.geoguard.main.whitelist) !== JSON.stringify(['10.9.9.9'])) {
+    console.error('HARNESS-FAIL: 未觸碰卻改寫了 selected/whitelist: ' + JSON.stringify({ s: store.geoguard.main.selected, w: store.geoguard.main.whitelist }));
+    process.exit(1);
+  }
+  delete store.geoguard.main.selected;
+  delete store.geoguard.main.whitelist;
+  console.log('clean-save OK');
+
   // 1. 搜尋 TW（單表，全國）
   const searches = NODES.filter((n) => n.tag === 'input' && n.attrs.type === 'text');
   if (searches.length === 0) { console.error('HARNESS-FAIL: 找不到搜尋框'); process.exit(1); }
@@ -287,6 +302,15 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
     process.exit(1);
   }
   console.log('setname gate OK');
+  // 7b. 有效改名必須真的寫進 store（自訂輸入框寫入路徑，掉線就靜默丟失）
+  setInp.value = 'NewSet';
+  await setInp.fire('change');
+  await saveBtn0.fire('click');
+  if (store.geoguard.main.setname !== 'NewSet') {
+    console.error('HARNESS-FAIL: 改名未寫入 store: ' + JSON.stringify(store.geoguard.main.setname));
+    process.exit(1);
+  }
+  console.log('setname roundtrip OK');
   setInp.value = 'allowed-IPList';
   await setInp.fire('change');
   if (store.geoguard.main.update_freq !== 'weekly' ||
@@ -614,5 +638,36 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
     process.exit(1);
   }
   console.log('counts-emphasis OK');
+  // 12j. M2: /0 不得放行（UI 兩處 validate＋後端）
+  const maskNew = (code.match(/\(\[1-9\]\|\[12\]\[0-9\]\|3\[0-2\]\)/g) || []).length;
+  if (maskNew < 2 || /\(\[0-9\]\|\[12\]\[0-9\]\|3\[0-2\]\)/.test(code)) {
+    console.error('HARNESS-FAIL: /0 未鎖死');
+    process.exit(1);
+  }
+  console.log('mask-nozero OK');
+  // 12k. 後端靜態斷言（H1/H2/L5/M2/M5）
+  const upd = fs.readFileSync(__dirname + '/../luci-app-geoguard/root/usr/bin/geoguard-update', 'utf8');
+  const banSh = fs.readFileSync(__dirname + '/../luci-app-geoguard/root/usr/bin/geoguard-ban', 'utf8');
+  const cntSh = fs.readFileSync(__dirname + '/../luci-app-geoguard/root/usr/bin/geoguard-counts', 'utf8');
+  const needs = [
+    [upd, 'another run in progress', 'H2 flock'],
+    [upd, 'still referenced by rules, kept', 'H1 留引用'],
+    [upd, 'nft delete set inet fw4 "$gone"', 'L5 清殘留殼'],
+    [upd, 'rule repoint', '改名 repoint'],
+    [banSh, 'if (m == 0) next;', 'M2 後端跳過 /0'],
+    [cntSh, "A-B ranges have no '/'", 'M5 計數修正'],
+  ];
+  for (const [src, needle, label] of needs) {
+    if (src.indexOf(needle) < 0) {
+      console.error('HARNESS-FAIL: 缺 ' + label + ': ' + needle);
+      process.exit(1);
+    }
+  }
+  // repoint 必須跑在 stale 清理之前（否則改名觸發 H1 誤殺）
+  if (upd.indexOf('rule repoint') > upd.indexOf('still referenced by rules, kept')) {
+    console.error('HARNESS-FAIL: repoint 順序在 H1 之後');
+    process.exit(1);
+  }
+  console.log('backend-static OK');
   console.log('HARNESS-DONE');
 })().catch((e) => { console.error('HARNESS-FAIL:', e.stack.split('\n').slice(0, 3).join(' | ')); process.exit(1); });
