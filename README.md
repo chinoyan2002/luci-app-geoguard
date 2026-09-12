@@ -36,3 +36,44 @@ uci commit firewall && fw4 reload
 ## 授權
 
 MIT，見 LICENSE。
+
+---
+
+# GeoGuard (luci-app-geoguard) — English
+
+OpenWrt LuCI app: tick countries + custom whitelist → fetch IP-geolocation CIDRs from dual feeds → merge into firewall4 ipset sets. Also ships login guard (LuCI/SSH brute-force banning) and a DDNS no-ban list. IPv4 only, bilingual: Traditional Chinese / English.
+
+> Latest release: v2.1.4 (prebuilt packages under [Releases](https://github.com/chinoyan2002/luci-app-geoguard/releases))
+
+## Features
+
+- **IP Sets**: 217 countries, dual feeds (primary/backup auto-failover), whitelist (single IP / CIDR / A-B range), daily/weekly/monthly auto-update; file name = set name (`/etc/luci-uploads/<name>.cidr`)
+- **Login Guard**: tunable window/retries/ban time (defaults 5 min / 8 / 2 h, web + SSH counted separately), full-block of banned IPs on WAN, LAN + reserved ranges never banned, WAN interface auto-detect
+- **DDNS allowlist**: dynamic hostnames auto-tracked for guard exemption only; IP sets untouched
+- Cron jobs carry comments (following the LuCI language); the package only builds sets and never touches firewall rules; one setting binds a set to a rule (step-by-step guide on the page)
+
+## Install
+
+- OpenWrt 24.x (opkg): `opkg install luci-app-geoguard_*_all.ipk`
+- OpenWrt 25.x (apk): `apk add luci-app-geoguard_*_all.apk` (plus optional `luci-i18n-geoguard-zh-tw`; English is the source language, no language pack needed)
+- Prebuilt packages: [GitHub Releases](https://github.com/chinoyan2002/luci-app-geoguard/releases) (apk signing pubkey shipped alongside); or SDK: `make package/luci-app-geoguard/compile`
+- After install, open Network → GeoGuard and press update-merge once to activate
+
+## Bind a set to your own firewall rule (example)
+
+```sh
+# attach the set to an existing rule (allow only sources inside the set)
+uci set firewall.@rule[0].ipset='allowed-IPList'
+uci commit firewall && fw4 reload
+```
+
+## Development
+
+- `luci-app-geoguard/`: standard luci.mk layout (`Makefile` + `root/` + `po/`, English source + Traditional Chinese translation)
+- `tools/luci-harness.js`: frontend tests (mini-DOM); `tools/i18n-check.js`: zh/en sync gate; `tools/py_lmo.py`: po→lmo
+- `packaging/`: APKBUILD + one-shot pipeline `build_packages.py` + notes in `BUILD.md`
+- After touching `.js`, harness must be all green; after touching `.sh`, `sh -n` + zero CR; LF endings (locked by `.gitattributes`)
+
+## License
+
+MIT, see LICENSE.
