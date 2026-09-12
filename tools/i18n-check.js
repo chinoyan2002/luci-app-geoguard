@@ -1,15 +1,15 @@
 // i18n-check: EN-source i18n gate (v2.1.0+)
-// view _() + menu title (EN) == pot msgids == zh-tw msgids;
-// zh-tw msgstr must be non-empty; msgstr must be Traditional (no simplified-only chars).
+// view _() + menu title (EN) == pot msgids == zh_Hant msgids;
+// zh_Hant msgstr must be non-empty; msgstr must be Traditional (no simplified-only chars).
 // usage: node tools/i18n-check.js (run at repo root)
 const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
-const VIEW = path.join(ROOT, 'luci-app-geoguard/root/www/luci-static/resources/view/geoguard.js');
+const VIEW = path.join(ROOT, 'luci-app-geoguard/htdocs/luci-static/resources/view/geoguard.js');
 const MENU = path.join(ROOT, 'luci-app-geoguard/root/usr/share/luci/menu.d/luci-app-geoguard.json');
 const POT = path.join(ROOT, 'luci-app-geoguard/po/templates/geoguard.pot');
-const PO_ZHTW = path.join(ROOT, 'luci-app-geoguard/po/zh-tw/geoguard.po');
+const PO_ZHTW = path.join(ROOT, 'luci-app-geoguard/po/zh_Hant/geoguard.po');
 
 let fail = 0;
 const code = fs.readFileSync(VIEW, 'utf8');

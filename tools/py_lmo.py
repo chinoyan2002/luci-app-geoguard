@@ -125,7 +125,7 @@ def verify_lmo(path, probes):
 
 if __name__ == '__main__':
     here = os.path.dirname(os.path.abspath(__file__))
-    po = os.path.normpath(os.path.join(here, '../luci-app-geoguard/po/zh-tw/geoguard.po'))
+    po = os.path.normpath(os.path.join(here, '../luci-app-geoguard/po/zh_Hant/geoguard.po'))
     entries = parse_po(po)
     print('parsed', len(entries))
     out, n = build_lmo(entries)

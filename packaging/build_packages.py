@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Full automated build pipeline for luci-app-geoguard:
-1. Build en + zh-tw .lmo files from po/
+1. Build zh_Hant .lmo file from po/ (EN is the source language)
 2. Assemble payload tree with strict modefix (dir 755 / exec 755 / others 644)
 3. Transfer to PVE LXC 201 build container
 4. Run abuild -d for signed APK packages + ipkg-build for gzip-tar IPK
@@ -60,7 +60,7 @@ def main():
 
     # 1. Build .lmo (EN is the source language: no en.lmo needed)
     lmo_jobs = [
-        ('zh-tw/geoguard.po', 'geoguard.zh-tw.lmo', [
+        ('zh_Hant/geoguard.po', 'geoguard.zh-tw.lmo', [
             ('Login Guard', '登入防護'),
             ('Unban all IPs', '解除所有IP的封鎖'),
             ('GeoGuard', '國門守衛 GeoGuard'),
@@ -82,13 +82,17 @@ def main():
     shutil.rmtree(os.path.dirname(stage_dir), ignore_errors=True)
     os.makedirs(os.path.join(stage_dir, 'CONTROL'), exist_ok=True)
 
-    for dp, _, filenames in os.walk(APP_ROOT):
-        relp = os.path.relpath(dp, APP_ROOT)
-        for fn in filenames:
-            src = os.path.join(dp, fn)
-            dst = os.path.join(stage_dir, relp, fn)
-            os.makedirs(os.path.dirname(dst), exist_ok=True)
-            shutil.copyfile(src, dst)
+    for tree, prefix in (('root', ''), ('htdocs', 'www')):
+        troot = os.path.join(ROOT_DIR, APP, tree)
+        if not os.path.isdir(troot):
+            continue
+        for dp, _, filenames in os.walk(troot):
+            relp = os.path.relpath(dp, troot)
+            for fn in filenames:
+                src = os.path.join(dp, fn)
+                dst = os.path.join(stage_dir, prefix, relp, fn)
+                os.makedirs(os.path.dirname(dst), exist_ok=True)
+                shutil.copyfile(src, dst)
 
     i18n_dir = os.path.join(stage_dir, 'usr', 'lib', 'lua', 'luci', 'i18n')
     os.makedirs(i18n_dir, exist_ok=True)
