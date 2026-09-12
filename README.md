@@ -2,14 +2,14 @@
 
 OpenWrt LuCI App：勾選國家＋自訂白名單 → 從雙訂閱源抓取 IP 地理定位 CIDR → 合併成 firewall4 ipset 集合，另含登入防護（LuCI／SSH 爆破封鎖）與 DDNS 免封名單。IPv4 only，正體中文／English 雙語。
 
-> 最新發佈：v2.1.4（預編包見 [Releases](https://github.com/chinoyan2002/luci-app-geoguard/releases)）
+> 最新發佈：v2.1.6（預編包見 [Releases](https://github.com/chinoyan2002/luci-app-geoguard/releases)）
 
 ## 功能
 
-- **IPs 設定**：217 國家勾選、雙訂閱源（主／備自動切換）、白名單（單 IP／CIDR／A-B 範圍）、每日／每週／每月自動更新；檔名即集合名（`/etc/luci-uploads/<名>.cidr`）
-- **登入防護**：時間窗／次數／封鎖時數可調（預設 5 分／8 次／2 小時，網頁＋SSH 分開計數），全擋被封 IP 的 WAN 流向，內網＋保留段永不封鎖，外網介面自動偵測
+- **IPs 設定**：217 國家勾選、雙訂閱源（主／備自動切換）、白名單（單 IP／CIDR／A-B 範圍）、每日／每週／每月自動更新；檔名即集合名（`/etc/luci-uploads/<名>.cidr`）；改名自動重指防火牆引用，取消勾選被引用的集合會保留並報錯（不斷防護）
+- **登入防護**：時間窗／次數／封鎖時數可調（預設 5 分／8 次／2 小時，網頁＋SSH 分開計數），全擋被封 IP 的 WAN 流向，內網＋保留段永不封鎖（`/0` 不接受），外網介面自動偵測
 - **DDNS 免封**：動態域名自動追 IP，只保防護免封、不動 IP 集合
-- 排程任務自帶註解（跟 LuCI 語言走）；本包只生產集合、不動防火牆規則；掛集合到規則上一行設定即可（頁面有手把手說明）
+- 排程任務自帶註解（跟 LuCI 語言走）；動作按鈕序列化＋忙時鎖定；沒動過的設定存檔不覆寫；本包只生產集合、不動防火牆規則；掛集合到規則上一行設定即可（頁面有手把手說明）
 
 ## 安裝
 
@@ -28,7 +28,7 @@ uci commit firewall && fw4 reload
 
 ## 開發
 
-- `luci-app-geoguard/`：標準 luci.mk 結構（`Makefile`＋`root/`＋`po/`，英文源＋繁中翻譯）
+- `luci-app-geoguard/`：標準 luci.mk 結構（`Makefile`＋`htdocs/`＋`root/`＋`po/`，英文源＋繁中翻譯 `zh_Hant`）
 - `tools/luci-harness.js`：前端測試（mini-DOM）；`tools/i18n-check.js`：中英對齊檢查；`tools/py_lmo.py`：po→lmo
 - `packaging/`：APKBUILD＋一鍵產線 `build_packages.py`＋說明 `BUILD.md`
 - 改 `.js` 跑 harness 全綠，改 `.sh` 跑 `sh -n`＋零 CR；LF 換行（`.gitattributes` 鎖定）
@@ -43,14 +43,14 @@ MIT，見 LICENSE。
 
 OpenWrt LuCI app: tick countries + custom whitelist → fetch IP-geolocation CIDRs from dual feeds → merge into firewall4 ipset sets. Also ships login guard (LuCI/SSH brute-force banning) and a DDNS no-ban list. IPv4 only, bilingual: Traditional Chinese / English.
 
-> Latest release: v2.1.4 (prebuilt packages under [Releases](https://github.com/chinoyan2002/luci-app-geoguard/releases))
+> Latest release: v2.1.6 (prebuilt packages under [Releases](https://github.com/chinoyan2002/luci-app-geoguard/releases))
 
 ## Features
 
-- **IP Sets**: 217 countries, dual feeds (primary/backup auto-failover), whitelist (single IP / CIDR / A-B range), daily/weekly/monthly auto-update; file name = set name (`/etc/luci-uploads/<name>.cidr`)
-- **Login Guard**: tunable window/retries/ban time (defaults 5 min / 8 / 2 h, web + SSH counted separately), full-block of banned IPs on WAN, LAN + reserved ranges never banned, WAN interface auto-detect
+- **IP Sets**: 217 countries, dual feeds (primary/backup auto-failover), whitelist (single IP / CIDR / A-B range), daily/weekly/monthly auto-update; file name = set name (`/etc/luci-uploads/<name>.cidr`); renames auto-repoint firewall references, deselecting a referenced set keeps it with an error (protection never breaks)
+- **Login Guard**: tunable window/retries/ban time (defaults 5 min / 8 / 2 h, web + SSH counted separately), full-block of banned IPs on WAN, LAN + reserved ranges never banned (`/0` rejected), WAN interface auto-detect
 - **DDNS allowlist**: dynamic hostnames auto-tracked for guard exemption only; IP sets untouched
-- Cron jobs carry comments (following the LuCI language); the package only builds sets and never touches firewall rules; one setting binds a set to a rule (step-by-step guide on the page)
+- Cron jobs carry comments (following the LuCI language); action buttons serialized + locked while busy; untouched settings are never overwritten on save; the package only builds sets and never touches firewall rules; one setting binds a set to a rule (step-by-step guide on the page)
 
 ## Install
 
@@ -69,7 +69,7 @@ uci commit firewall && fw4 reload
 
 ## Development
 
-- `luci-app-geoguard/`: standard luci.mk layout (`Makefile` + `root/` + `po/`, English source + Traditional Chinese translation)
+- `luci-app-geoguard/`: standard luci.mk layout (`Makefile` + `htdocs/` + `root/` + `po/`, English source + Traditional Chinese translation `zh_Hant`)
 - `tools/luci-harness.js`: frontend tests (mini-DOM); `tools/i18n-check.js`: zh/en sync gate; `tools/py_lmo.py`: po→lmo
 - `packaging/`: APKBUILD + one-shot pipeline `build_packages.py` + notes in `BUILD.md`
 - After touching `.js`, harness must be all green; after touching `.sh`, `sh -n` + zero CR; LF endings (locked by `.gitattributes`)
