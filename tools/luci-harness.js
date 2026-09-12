@@ -138,6 +138,10 @@ const uci = {
       return Promise.reject(new Error('RPC call to uci/apply failed with ubus code 5: No data received'));
     if (applyMode === 'boom')
       return Promise.reject(new Error('RPC call to uci/apply failed with ubus code 1: Invalid argument'));
+    if (applyMode === 'flaky6') {
+      applyMode = 'ok';
+      return Promise.reject(new Error('RPC call to uci/apply failed with ubus code 6: Permission denied'));
+    }
     return Promise.resolve();
   },
 };
@@ -512,5 +516,69 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
   }
   applyMode = 'ok';
   console.log('apply-realerror OK');
+  // 12e. code 6 重試一次後成功
+  notifications.length = 0;
+  applyMode = 'flaky6';
+  await banSaveBtn.fire('click');
+  if (!notifications.some((t) => t.indexOf('Guard settings saved and restarted') >= 0)) {
+    console.error('HARNESS-FAIL: code6 重試未成功: ' + JSON.stringify(notifications));
+    process.exit(1);
+  }
+  applyMode = 'ok';
+  console.log('apply-retry6 OK');
+  // 12f. 連打：第二、三下忽略，忙時按鈕鎖定，後端只跑一次
+  const realExec = fsStub.exec;
+  let updateGate = null;
+  let updateRuns = 0;
+  fsStub.exec = (cmd) => {
+    if (cmd === '/usr/bin/geoguard-update') {
+      updateRuns++;
+      return new Promise((res) => { updateGate = () => res({ code: 0 }); });
+    }
+    return realExec(cmd);
+  };
+  notifications.length = 0;
+  const q1 = abtns[1].fire('click');
+  const lockedDuring = abtns[0].disabled === true && abtns[1].disabled === true &&
+    abtns[2].disabled === true && banSaveBtn.disabled === true && unbanBtn.disabled === true;
+  const q2 = abtns[1].fire('click');
+  const q3 = banSaveBtn.fire('click');
+  for (let i = 0; i < 200 && updateRuns === 0; i++)
+    await new Promise((r) => setTimeout(r, 10));
+  if (updateRuns !== 1) {
+    console.error('HARNESS-FAIL: 連打後端跑了 ' + updateRuns + ' 次');
+    process.exit(1);
+  }
+  if (!lockedDuring) {
+    console.error('HARNESS-FAIL: 忙時按鈕未鎖定');
+    process.exit(1);
+  }
+  updateGate();
+  await q1; await q2; await q3;
+  if (abtns[1].disabled !== false || banSaveBtn.disabled !== false) {
+    console.error('HARNESS-FAIL: 跑完按鈕未解鎖');
+    process.exit(1);
+  }
+  if (!notifications.some((t) => t.indexOf('Updated and merged successfully') >= 0)) {
+    console.error('HARNESS-FAIL: 連打後成功提示缺失: ' + JSON.stringify(notifications));
+    process.exit(1);
+  }
+  fsStub.exec = realExec;
+  console.log('rapid-click OK');
+  // 12g. cron 註解：兩檔四句一字不差＋有用 $DNOTE/$UNOTE
+  const cronSh = fs.readFileSync(__dirname + '/../luci-app-geoguard/root/usr/bin/geoguard-cron', 'utf8');
+  const ddnsSh = fs.readFileSync(__dirname + '/../luci-app-geoguard/root/usr/bin/geoguard-ddns', 'utf8');
+  const noteLines = (s) => s.split('\n').filter((l) => /^NOTE_(DDNS|UPDATE)_(ZH|EN)=/.test(l)).sort();
+  const cn = noteLines(cronSh);
+  const dn = noteLines(ddnsSh);
+  if (cn.length !== 4 || JSON.stringify(cn) !== JSON.stringify(dn)) {
+    console.error('HARNESS-FAIL: cron 註解兩檔不一致');
+    process.exit(1);
+  }
+  if (cronSh.indexOf('$DNOTE') < 0 || cronSh.indexOf('$UNOTE') < 0 || ddnsSh.indexOf('$DNOTE') < 0) {
+    console.error('HARNESS-FAIL: cron 註解未使用');
+    process.exit(1);
+  }
+  console.log('cron-notes OK');
   console.log('HARNESS-DONE');
 })().catch((e) => { console.error('HARNESS-FAIL:', e.stack.split('\n').slice(0, 3).join(' | ')); process.exit(1); });

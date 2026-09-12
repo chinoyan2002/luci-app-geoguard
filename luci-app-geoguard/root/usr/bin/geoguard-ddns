@@ -8,12 +8,30 @@ STATE="$BASE_DIR/company-ddns.list"
 HIST="$BASE_DIR/history.log"
 [ -f "$STATE" ] || : > "$STATE"
 
+# cron 行尾註解跟 LuCI 系統語言走。
+# 警告：NOTE_* 四句在 geoguard-cron 內有完全相同的副本，兩邊必須一字不差，
+# 否則本自癒整行比對永遠失配→每輪刪寫重載 cron。
+NOTE_DDNS_ZH='# 國門守衛 DDNS 白名單追蹤（自動管理，請勿手改）'
+NOTE_DDNS_EN='# GeoGuard DDNS whitelist tracker (auto-managed, do not edit)'
+NOTE_UPDATE_ZH='# 國門守衛 IP 集合更新（自動管理，請勿手改）'
+NOTE_UPDATE_EN='# GeoGuard country IP sets updater (auto-managed, do not edit)'
+gg_cron_lang() {
+  case "$(uci -q get luci.main.lang 2>/dev/null)" in
+    zh*) echo 'zh' ;;
+    *) echo 'en' ;;
+  esac
+}
 # cron 自癒：靜態行被任何路徑弄丟／間隔被改都自動修回來
 DI=$(uci -q get geoguard.main.ddns_interval 2>/dev/null)
 case "$DI" in ''|*[!0-9]*) DI=3 ;; esac
 [ "$DI" -lt 1 ] && DI=1
 [ "$DI" -gt 60 ] && DI=60
-DLINE="*/$DI * * * * /usr/bin/geoguard-ddns"
+if [ "$(gg_cron_lang)" = 'zh' ]; then
+  DNOTE="$NOTE_DDNS_ZH"
+else
+  DNOTE="$NOTE_DDNS_EN"
+fi
+DLINE="*/$DI * * * * /usr/bin/geoguard-ddns $DNOTE"
 grep -qxF "$DLINE" /etc/crontabs/root 2>/dev/null || {
   sed -i '\#geoguard-ddns#d' /etc/crontabs/root 2>/dev/null
   echo "$DLINE" >> /etc/crontabs/root

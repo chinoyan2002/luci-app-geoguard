@@ -5,7 +5,7 @@
 'require ui';
 'require uci';
 
-var VERSION = '2.1.1';
+var VERSION = '2.1.2';
 var fmt = function(s) {
 	var args = Array.prototype.slice.call(arguments, 1);
 	var i = 0;
@@ -496,7 +496,7 @@ return view.extend({
 				return pushCountries().then(function() {
 					return map.save(null, true);
 				}).then(function() {
-					return uci.apply();
+					return robustApply();
 				}).then(function() {
 					if (!checkSetname()) {
 						ui.addNotification(null, E('p', _('Bad set name (must start with a letter: letters/digits/_/- only). Settings saved, update skipped.')), 'error');
@@ -531,12 +531,8 @@ return view.extend({
 			};
 			var mkbtn = function(cmd, title, okmsg, noexec) {
 				var b = E('button', { 'class': 'btn cbi-button cbi-button-action', 'style': 'margin-right:0.5em' }, [title]);
-				b.addEventListener('click', function(ev) {
-					if (ev && ev.preventDefault)
-						ev.preventDefault();
-					return runone(cmd, okmsg, noexec);
-				});
-				return b;
+				b.addEventListener('click', guardedClick(function() { return runone(cmd, okmsg, noexec); }));
+				return trackBtn(b);
 			};
 			return E('div', { 'style': 'display:flex;align-items:center;gap:0.5em;flex-wrap:wrap' }, [
 				mkbtn('/usr/bin/geoguard-fetch', _('Update IP Sets Now'), _('IP sets updated (fetch only, not merged)'), false),
@@ -583,13 +579,37 @@ return view.extend({
 				return String(hi);
 			return String(v);
 		};
-		/* uci.apply with empty changeset -> rpcd UBUS_STATUS_NO_DATA (code 5).
-		   Treat only the no-data case as success; rethrow real errors. */
-		var applyIgnoreNoData = function() {
+		/* Serialize backend actions: rapid clicks otherwise overlap uci
+		   transactions (ubus code 6), leave staged changes behind, and run
+		   heavy updates in parallel. While busy, action buttons lock. */
+		var actionBusy = false;
+		var actionBtns = [];
+		var trackBtn = function(b) { actionBtns.push(b); return b; };
+		var setActionBusy = function(on) {
+			actionBusy = on;
+			actionBtns.forEach(function(b) { try { b.disabled = on; } catch (ignore) {} });
+		};
+		var guardedClick = function(fn) {
+			return function(ev) {
+				if (ev && ev.preventDefault)
+					ev.preventDefault();
+				if (actionBusy)
+					return false;
+				setActionBusy(true);
+				return Promise.resolve().then(fn).then(
+					function() { setActionBusy(false); },
+					function(e) { setActionBusy(false); throw e; });
+			};
+		};
+		/* Empty changeset -> rpcd NO_DATA (code 5): not an error.
+		   Contended apply (code 6): retry once after 1s. */
+		var robustApply = function(retried) {
 			return uci.apply().catch(function(e) {
 				var msg = (e && e.message) || '';
 				if (/code 5|NO_DATA|No data|未收到資料/i.test(msg))
 					return null;
+				if (!retried && /code 6|permission denied|權限被拒絕/i.test(msg))
+					return new Promise(function(resolve) { setTimeout(resolve, 1000); }).then(function() { return robustApply(true); });
 				throw e;
 			});
 		};
@@ -716,7 +736,7 @@ return view.extend({
 			var saveBan = function() {
 				pushBan();
 				return map.save(null, true).then(function() {
-					return applyIgnoreNoData();
+					return robustApply();
 				}).then(function() {
 					return fs.exec('/usr/bin/geoguard-ban-guard');
 				}).then(function() {
@@ -741,12 +761,8 @@ return view.extend({
 			};
 			var mkb = function(title, fn, cls) {
 				var b = E('button', { 'class': 'btn cbi-button ' + cls, 'style': 'margin-right:0.5em' }, [title]);
-				b.addEventListener('click', function(ev) {
-					if (ev && ev.preventDefault)
-						ev.preventDefault();
-					return fn();
-				});
-				return b;
+				b.addEventListener('click', guardedClick(fn));
+				return trackBtn(b);
 			};
 			return E('div', { 'style': 'display:flex;align-items:center;gap:0.5em;flex-wrap:wrap' }, [
 				mkb(_('Save & Restart Guard'), saveBan, 'cbi-button-action'),
