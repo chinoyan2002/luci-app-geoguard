@@ -231,3 +231,12 @@ msgstr "啟用此選項來封鎖登入失敗次數過多的 IP 位址"
 msgid "Unban all IPs"
 msgstr "解除所有IP的封鎖"
 
+msgid "IP sets updated (fetch only, not merged)"
+msgstr "IP 集合已更新（僅抓檔，未合併重載）"
+
+msgid "Updated and merged successfully (incl. whitelist)"
+msgstr "已成功更新並合併（含白名單）"
+
+msgid "Settings saved (schedule synced)"
+msgstr "設定已儲存（排程已同步）"
+

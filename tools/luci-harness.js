@@ -118,6 +118,7 @@ const store = {
     ban_web: '1', ban_ssh: '1',
   } },
 };
+let applyMode = 'ok';
 const uci = {
   load: () => Promise.resolve(),
   get: (c, s, o) => {
@@ -132,7 +133,13 @@ const uci = {
   },
   unset: (c, s, o) => { delete store[c][s][o]; },
   save: () => Promise.resolve(),
-  apply: () => Promise.resolve(),
+  apply: () => {
+    if (applyMode === 'nodata')
+      return Promise.reject(new Error('RPC call to uci/apply failed with ubus code 5: No data received'));
+    if (applyMode === 'boom')
+      return Promise.reject(new Error('RPC call to uci/apply failed with ubus code 1: Invalid argument'));
+    return Promise.resolve();
+  },
 };
 
 const factory = new Function('view', 'form', 'fs', 'ui', 'uci', 'E', '_', code);
@@ -346,6 +353,10 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
     console.error('HARNESS-FAIL: 缺少排版 CSS');
     process.exit(1);
   }
+  if (styles.indexOf('flex:none') < 0 || styles.indexOf('15em') < 0) {
+    console.error('HARNESS-FAIL: 缺少標題欄/輸入框收窄 CSS');
+    process.exit(1);
+  }
   console.log('header-row + css OK');
   // 11. 自動更新 checkbox 取消 → 存檔應寫 0；儲存設定鍵只存檔不跑更新
   const autoBoxes = NODES.filter((n) => n.tag === 'input' && n.attrs.type === 'checkbox' && !n.attrs.value);
@@ -483,5 +494,23 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
     }
   }
   console.log('ban-actions OK');
+  // 12d. apply code 5（空變更）應放行，真錯誤仍報錯
+  notifications.length = 0;
+  applyMode = 'nodata';
+  await banSaveBtn.fire('click');
+  if (!notifications.some((t) => t.indexOf('Guard settings saved and restarted') >= 0)) {
+    console.error('HARNESS-FAIL: code5 未被放行: ' + JSON.stringify(notifications));
+    process.exit(1);
+  }
+  console.log('apply-nodata OK');
+  notifications.length = 0;
+  applyMode = 'boom';
+  await banSaveBtn.fire('click');
+  if (!notifications.some((t) => t.indexOf('Failed:') >= 0)) {
+    console.error('HARNESS-FAIL: 真錯誤被吞掉: ' + JSON.stringify(notifications));
+    process.exit(1);
+  }
+  applyMode = 'ok';
+  console.log('apply-realerror OK');
   console.log('HARNESS-DONE');
 })().catch((e) => { console.error('HARNESS-FAIL:', e.stack.split('\n').slice(0, 3).join(' | ')); process.exit(1); });

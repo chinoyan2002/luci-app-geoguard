@@ -5,7 +5,7 @@
 'require ui';
 'require uci';
 
-var VERSION = '2.1.0';
+var VERSION = '2.1.1';
 var fmt = function(s) {
 	var args = Array.prototype.slice.call(arguments, 1);
 	var i = 0;
@@ -481,7 +481,7 @@ return view.extend({
 		o = s.taboption('settings', form.DummyValue, '_note');
 		o.render = function(section_id) {
 			return E('div', { 'class': 'cbi-section' }, [
-				E('style', {}, ['#cbi-geoguard input.cbi-input-text{width:100%;max-width:1024px}#cbi-geoguard .cbi-value-title{width:300px;flex:0 0 300px;white-space:nowrap;text-align:left!important}#cbi-geoguard .cbi-value-field .btn{width:auto}#cbi-geoguard table.cbi-section-table td,#cbi-geoguard table.cbi-section-table th{padding:3px 6px;text-align:left!important}#cbi-geoguard p{margin:0.3em 0;text-align:left}#cbi-geoguard .cbi-dynlist{width:100%;max-width:none}#cbi-geoguard .cbi-dynlist .add-item{display:flex}#cbi-geoguard .cbi-dynlist .add-item input{flex:1;margin-right:0.5em}#cbi-geoguard .cbi-value label.cbi-value-title{width:auto;text-align:left!important}#cbi-geoguard div.cbi-value{text-align:left}']),
+				E('style', {}, ['#cbi-geoguard input.cbi-input-text{width:15em;max-width:100%}#cbi-geoguard .cbi-value-title{white-space:nowrap;text-align:left!important}#cbi-geoguard .cbi-value-field .btn{width:auto}#cbi-geoguard table.cbi-section-table td,#cbi-geoguard table.cbi-section-table th{padding:3px 6px;text-align:left!important}#cbi-geoguard p{margin:0.3em 0;text-align:left}#cbi-geoguard .cbi-dynlist{width:100%;max-width:none}#cbi-geoguard .cbi-dynlist .add-item{display:flex}#cbi-geoguard .cbi-dynlist .add-item input{flex:1;margin-right:0.5em}#cbi-geoguard .cbi-value label.cbi-value-title{width:auto!important;flex:none!important;margin-right:.6em;min-width:12em}#cbi-geoguard div.cbi-value{text-align:left}']),
 				E('p', {}, [_('This page only builds IP set files and never changes firewall rules.')]),
 				E('p', {}, [_('Apply: Network → Firewall → Port Forwards → Add → Advanced → pick the set in IPSet, then Save & Apply.')]),
 				E('p', {}, [_('Fallback (SSH): uci set firewall.@redirect[N].ipset=set name, commit, then fw4 reload.')])
@@ -539,9 +539,9 @@ return view.extend({
 				return b;
 			};
 			return E('div', { 'style': 'display:flex;align-items:center;gap:0.5em;flex-wrap:wrap' }, [
-				mkbtn('/usr/bin/geoguard-fetch', _('Update IP Sets Now'), 'IP 集合已更新（僅抓檔，未合併重載）', false),
-				mkbtn('/usr/bin/geoguard-update', _('Update and Merge Now'), '已成功更新並合併（含白名單）', false),
-				mkbtn(null, _('Save Settings'), '設定已儲存（排程已同步）', true)
+				mkbtn('/usr/bin/geoguard-fetch', _('Update IP Sets Now'), _('IP sets updated (fetch only, not merged)'), false),
+				mkbtn('/usr/bin/geoguard-update', _('Update and Merge Now'), _('Updated and merged successfully (incl. whitelist)'), false),
+				mkbtn(null, _('Save Settings'), _('Settings saved (schedule synced)'), true)
 			]);
 		};
 
@@ -582,6 +582,16 @@ return view.extend({
 			if (v > hi)
 				return String(hi);
 			return String(v);
+		};
+		/* uci.apply with empty changeset -> rpcd UBUS_STATUS_NO_DATA (code 5).
+		   Treat only the no-data case as success; rethrow real errors. */
+		var applyIgnoreNoData = function() {
+			return uci.apply().catch(function(e) {
+				var msg = (e && e.message) || '';
+				if (/code 5|NO_DATA|No data|未收到資料/i.test(msg))
+					return null;
+				throw e;
+			});
 		};
 		var pushBan = function() {
 			uci.set('geoguard', 'main', 'ban_maxretry', banClamp(banState.maxretry, 1, 100, '8'));
@@ -706,7 +716,7 @@ return view.extend({
 			var saveBan = function() {
 				pushBan();
 				return map.save(null, true).then(function() {
-					return uci.apply();
+					return applyIgnoreNoData();
 				}).then(function() {
 					return fs.exec('/usr/bin/geoguard-ban-guard');
 				}).then(function() {

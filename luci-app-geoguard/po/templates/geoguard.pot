@@ -231,3 +231,12 @@ msgstr ""
 msgid "Unban all IPs"
 msgstr ""
 
+msgid "IP sets updated (fetch only, not merged)"
+msgstr ""
+
+msgid "Updated and merged successfully (incl. whitelist)"
+msgstr ""
+
+msgid "Settings saved (schedule synced)"
+msgstr ""
+
