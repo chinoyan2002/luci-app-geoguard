@@ -6,15 +6,6 @@ msgstr ""
 msgid "Invalid format: enter a single IP (e.g. 203.0.113.10), CIDR (e.g. 203.0.113.0/24) or range (e.g. 203.0.113.10-203.0.113.50)"
 msgstr "格式錯誤：請輸入單一 IP（如 203.0.113.10）、CIDR（如 203.0.113.0/24）或範圍（如 203.0.113.10-203.0.113.50）"
 
-msgid "Active set: no data yet"
-msgstr "目前啟用的集合：尚無資料"
-
-msgid "Active: %s.cidr (%s lines / %s live entries / updated %s)"
-msgstr "目前啟用：%s.cidr（%s 行／live %s 段／更新於 %s）"
-
-msgid "Select countries + whitelist IPs, merged into sets. This page only builds IP sets, never touches the firewall."
-msgstr "勾選國家＋白名單 IP，合併成集合檔。本頁只生產 IP 集合，不動防火牆。"
-
 msgid "Settings"
 msgstr "設定"
 
@@ -74,9 +65,6 @@ msgstr "失敗改抓備用；抓不到沿用舊檔。"
 
 msgid "Merged set name (countries + custom whitelist)"
 msgstr "多國家+自訂白名單IP的總集合名稱"
-
-msgid "Must start with a letter, followed by letters, digits, _ or -"
-msgstr "只允許英文開頭，後接英文數字底線連字號"
 
 msgid "Rule: start with a letter; letters/digits/_/- only. File shares the set name; old file kept after rename."
 msgstr "規則：英文開頭，僅英文數字底線連字號。檔名與 set 同名；改名舊檔保留。"
@@ -239,4 +227,13 @@ msgstr "已成功更新並合併（含白名單）"
 
 msgid "Settings saved (schedule synced)"
 msgstr "設定已儲存（排程已同步）"
+
+msgid "Select countries + whitelist IPs into merged IP set files. This page only builds IP sets; apply them yourself under Firewall - Port Forwards by picking the set in a rule."
+msgstr "勾選國家＋白名單 IP，合併成IPs集合檔。本頁只生產 IPs 集合，請自行到 防火牆 - 連接埠轉發，選取規則-使用 IPs 集合"
+
+msgid "Latest merged IP set file: /etc/luci-uploads/%s.cidr (%s lines / live %s entries / updated %s)"
+msgstr "目前最新合併的IPs集合檔：/etc/luci-uploads/%s.cidr（%s 行 / live %s 段 / 更新於 %s）"
+
+msgid "Latest merged IP set file: no data yet"
+msgstr "目前最新合併的IPs集合檔：尚無資料"
 

@@ -6,15 +6,6 @@ msgstr ""
 msgid "Invalid format: enter a single IP (e.g. 203.0.113.10), CIDR (e.g. 203.0.113.0/24) or range (e.g. 203.0.113.10-203.0.113.50)"
 msgstr ""
 
-msgid "Active set: no data yet"
-msgstr ""
-
-msgid "Active: %s.cidr (%s lines / %s live entries / updated %s)"
-msgstr ""
-
-msgid "Select countries + whitelist IPs, merged into sets. This page only builds IP sets, never touches the firewall."
-msgstr ""
-
 msgid "Settings"
 msgstr ""
 
@@ -73,9 +64,6 @@ msgid "Falls back on failure; keeps the old file if both fail."
 msgstr ""
 
 msgid "Merged set name (countries + custom whitelist)"
-msgstr ""
-
-msgid "Must start with a letter, followed by letters, digits, _ or -"
 msgstr ""
 
 msgid "Rule: start with a letter; letters/digits/_/- only. File shares the set name; old file kept after rename."
@@ -238,5 +226,14 @@ msgid "Updated and merged successfully (incl. whitelist)"
 msgstr ""
 
 msgid "Settings saved (schedule synced)"
+msgstr ""
+
+msgid "Select countries + whitelist IPs into merged IP set files. This page only builds IP sets; apply them yourself under Firewall - Port Forwards by picking the set in a rule."
+msgstr ""
+
+msgid "Latest merged IP set file: /etc/luci-uploads/%s.cidr (%s lines / live %s entries / updated %s)"
+msgstr ""
+
+msgid "Latest merged IP set file: no data yet"
 msgstr ""
 

@@ -5,7 +5,7 @@
 'require ui';
 'require uci';
 
-var VERSION = '2.1.3';
+var VERSION = '2.1.4';
 var fmt = function(s) {
 	var args = Array.prototype.slice.call(arguments, 1);
 	var i = 0;
@@ -105,6 +105,7 @@ var countryState = {};
 var wlState = [];
 var countsDiv = null;
 var schedState = { freq: 'weekly', hour: '6', min: '0', auto: '1' };
+var nameState = { set: 'allowed-IPList', white: 'CustomAllow' };
 var OLD_GROUPS = ['asia', 'europe', 'africa', 'northamerica', 'southamerica', 'oceania'];
 
 function wlCheck(v) {
@@ -130,6 +131,8 @@ function pushCountries() {
 	uci.set('geoguard', 'main', 'update_hour', schedState.hour);
 	uci.set('geoguard', 'main', 'update_min', schedState.min);
 	uci.set('geoguard', 'main', 'auto_update', schedState.auto);
+	uci.set('geoguard', 'main', 'setname', nameState.set || 'allowed-IPList');
+	uci.set('geoguard', 'main', 'white_name', nameState.white || 'CustomAllow');
 	if (wlState.length > 0)
 		uci.set('geoguard', 'main', 'whitelist', wlState.slice());
 	else
@@ -180,8 +183,8 @@ return view.extend({
 		var countsLine = function() {
 			var p = (countsText || '').split(/\s+/);
 			if (p.length < 4 || !p[0])
-				return _('Active set: no data yet');
-			return fmt(_('Active: %s.cidr (%s lines / %s live entries / updated %s)'), p[0], p[1], p[2], p[3].replace('_', ' '));
+				return _('Latest merged IP set file: no data yet');
+			return fmt(_('Latest merged IP set file: /etc/luci-uploads/%s.cidr (%s lines / live %s entries / updated %s)'), p[0], p[1], p[2], p[3].replace('_', ' '));
 		};
 
 		var refreshCounts = function() {
@@ -198,7 +201,15 @@ return view.extend({
 		};
 
 		m = new form.Map('geoguard', _('GeoGuard Ver:') + VERSION,
-			_('Select countries + whitelist IPs, merged into sets. This page only builds IP sets, never touches the firewall.'));
+			_('Select countries + whitelist IPs into merged IP set files. This page only builds IP sets; apply them yourself under Firewall - Port Forwards by picking the set in a rule.'));
+
+		/* counts line lives in its own top section so it renders
+		   between the subtitle and the tab menu (mockup layout) */
+		var sTop = m.section(form.NamedSection, 'main');
+		sTop.option(form.DummyValue, '_topcounts').render = function(section_id) {
+			countsDiv = E('div', { 'class': 'country-counts', 'style': 'margin:0.5em 0;font-weight:bold;color:#0a7b1e' }, [countsLine()]);
+			return countsDiv;
+		};
 
 		s = m.section(form.TypedSection, 'geoguard', _('Settings'));
 		s.anonymous = true;
@@ -335,12 +346,6 @@ return view.extend({
 			]);
 		};
 
-		o = s.taboption('settings', form.DummyValue, '_counts');
-		o.render = function(section_id) {
-			countsDiv = E('div', { 'class': 'country-counts', 'style': 'margin:0.5em 0;font-weight:bold;color:#0a7b1e' }, [countsLine()]);
-			return countsDiv;
-		};
-
 		o = s.taboption('settings', form.DummyValue, '_whitelist');
 		o.render = function(section_id) {
 			var cur = uci.get('geoguard', 'main', 'whitelist') || [];
@@ -408,24 +413,38 @@ return view.extend({
 		o.rmempty = false;
 		o.description = _('Falls back on failure; keeps the old file if both fail.');
 
-		o = s.taboption('settings', form.Value, 'setname', _('Merged set name (countries + custom whitelist)'));
-		o.validate = function(section_id, value) {
-			if (!/^[A-Za-z][A-Za-z0-9_-]*$/.test(value || ''))
-				return _('Must start with a letter, followed by letters, digits, _ or -');
-			return true;
+		/* set names as custom rows so the file path prefix/suffix can flank
+		   the inputs (framework Value cannot); saved via pushCountries,
+		   gated by checkSetname (same message as the retired validate) */
+		o = s.taboption('settings', form.DummyValue, '_setnames');
+		o.render = function(section_id) {
+			nameState.set = uci.get('geoguard', 'main', 'setname') || 'allowed-IPList';
+			nameState.white = uci.get('geoguard', 'main', 'white_name') || 'CustomAllow';
+			var mkName = function(dataName, val, cb) {
+				var inp = E('input', { 'type': 'text', 'class': 'cbi-input-text', 'data-name': dataName, 'style': 'width:15em;max-width:100%', 'value': val });
+				inp.addEventListener('change', function() { cb((inp.value || '').trim()); });
+				return inp;
+			};
+			var setInp = mkName('setname', nameState.set, function(v) { nameState.set = v; });
+			var whiteInp = mkName('white_name', nameState.white, function(v) { nameState.white = v; });
+			var nameRow = function(title, desc, inp) {
+				return E('div', { 'class': 'cbi-value' }, [
+					E('label', { 'class': 'cbi-value-title' }, [title]),
+					E('div', { 'class': 'cbi-value-field' }, [
+						E('div', {}, [
+							E('span', {}, ['/etc/luci-uploads/']), E('span', {}, [' ']),
+							inp,
+							E('span', {}, [' ']), E('span', {}, ['.cidr'])
+						]),
+						E('div', { 'class': 'cbi-value-description' }, [desc])
+					])
+				]);
+			};
+			return E('div', {}, [
+				nameRow(_('Merged set name (countries + custom whitelist)'), _('Rule: start with a letter; letters/digits/_/- only. File shares the set name; old file kept after rename.'), setInp),
+				nameRow(_('Whitelist set name'), _('Whitelist lives in its own set, visible under Firewall IP Sets. Same rules as above.'), whiteInp)
+			]);
 		};
-		o.default = 'allowed-IPList';
-		o.rmempty = false;
-		o.description = _('Rule: start with a letter; letters/digits/_/- only. File shares the set name; old file kept after rename.');
-		o = s.taboption('settings', form.Value, 'white_name', _('Whitelist set name'));
-		o.validate = function(section_id, value) {
-			if (!/^[A-Za-z][A-Za-z0-9_-]*$/.test(value || ''))
-				return _('Must start with a letter, followed by letters, digits, _ or -');
-			return true;
-		};
-		o.default = 'CustomAllow';
-		o.rmempty = false;
-		o.description = _('Whitelist lives in its own set, visible under Firewall IP Sets. Same rules as above.');
 
 		o = s.taboption('settings', form.DummyValue, '_sched');
 		o.render = function(section_id) {

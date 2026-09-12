@@ -259,8 +259,22 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
   await otherSels[0].fire('change');
   otherSels[1].value = '5';
   await otherSels[1].fire('change');
-  // 7. 集合名非法 → 按鈕應擋下（不打 update），且有錯誤通知
-  store.geoguard.main.setname = 'bad name!';
+  // 7. 集合名非法 → 按鈕應擋下（不打 update），且有錯誤通知（走 UI 輸入框真實路徑）
+  const setInp = NODES.find((n) => n.tag === 'input' && n.attrs && n.attrs['data-name'] === 'setname');
+  const whiteInp = NODES.find((n) => n.tag === 'input' && n.attrs && n.attrs['data-name'] === 'white_name');
+  if (!setInp || !whiteInp) {
+    console.error('HARNESS-FAIL: 找不到集合名輸入框');
+    process.exit(1);
+  }
+  // 路徑前後綴裝飾（mockup 標準）
+  const allText7 = NODES.map((n) => n.textContent || '').join('\n');
+  if (allText7.indexOf('/etc/luci-uploads/') < 0 || allText7.indexOf('.cidr') < 0) {
+    console.error('HARNESS-FAIL: 集合名列缺路徑前後綴');
+    process.exit(1);
+  }
+  console.log('setname-affix OK');
+  setInp.value = 'bad name!';
+  await setInp.fire('change');
   store.geoguard.main.selected = ['tw'];
   const execBefore = execCalls.length;
   await mergeBtn.fire('click');
@@ -273,7 +287,8 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
     process.exit(1);
   }
   console.log('setname gate OK');
-  store.geoguard.main.setname = 'allowed-IPList';
+  setInp.value = 'allowed-IPList';
+  await setInp.fire('change');
   if (store.geoguard.main.update_freq !== 'weekly' ||
       store.geoguard.main.update_hour !== '4' ||
       store.geoguard.main.update_min !== '5') {
@@ -391,8 +406,9 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
     }
   }
   console.log('ban-fields OK');
-  // 12a. 籤順：登入防護 → settings → log
-  const tabOrder = Object.keys(sectionRenders[0]._tabs);
+  // 12a. 籤順：登入防護 → settings → log（找有籤的 section，頂部 counts 區無籤）
+  const tabbedSection = sectionRenders.find((s) => Object.keys(s._tabs).length > 0);
+  const tabOrder = Object.keys(tabbedSection._tabs);
   if (JSON.stringify(tabOrder) !== JSON.stringify(['ban', 'settings', 'log'])) {
     console.error('HARNESS-FAIL: 籤順錯誤: ' + JSON.stringify(tabOrder));
     process.exit(1);
