@@ -101,6 +101,8 @@ const fsStub = {
     execCalls.push(cmd);
     if (cmd === '/usr/bin/geoguard-status')
       return Promise.resolve({ code: 0, stdout: '===== Set status =====\nSet file:x (100 lines)\n===== Update history (last 20) =====\n2026-09-11|update|ok\n' });
+    if (cmd === '/usr/bin/geoguard-counts')
+      return Promise.resolve({ code: 0, stdout: 'allowed-IPList 729 658 2026-09-12_13:51:49 2026-09-12_14:38:31' });
     return Promise.resolve({ code: 0 });
   },
 };
@@ -688,5 +690,37 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
     process.exit(1);
   }
   console.log('groups-clean-save OK');
+  // 12m. counts 檢查時間格式＋Reload 鈕
+  const countsDivs2 = NODES.filter((n) => n.tag === 'div' && n.attrs && n.attrs.class === 'country-counts');
+  const lastCounts = countsDivs2.length ? countsDivs2[countsDivs2.length - 1].textContent : '';
+  if (lastCounts.indexOf('checked') < 0 || lastCounts.indexOf('658') < 0) {
+    console.error('HARNESS-FAIL: counts 檢查格式缺失: ' + lastCounts.slice(0, 120));
+    process.exit(1);
+  }
+  console.log('counts-checked OK');
+  const rldBtn = btnByText('Reload Log');
+  if (!rldBtn) { console.error('HARNESS-FAIL: 缺重新載入鈕'); process.exit(1); }
+  const stCalls = execCalls.filter((c) => c === '/usr/bin/geoguard-status').length;
+  await rldBtn.fire('click');
+  if (execCalls.filter((c) => c === '/usr/bin/geoguard-status').length !== stCalls + 1) {
+    console.error('HARNESS-FAIL: Reload 未重跑狀態');
+    process.exit(1);
+  }
+  console.log('reload-log OK');
+  // 12n. status 豐富化標記（後端靜態）
+  const stSh = fs.readFileSync(__dirname + '/../luci-app-geoguard/root/usr/bin/geoguard-status', 'utf8');
+  for (const needle of ['Per-country files:', 'Whitelist file:', 'KiB', 'merged ranges', 'livecount']) {
+    if (stSh.indexOf(needle) < 0) {
+      console.error('HARNESS-FAIL: status 缺 ' + needle);
+      process.exit(1);
+    }
+  }
+  // status 與 counts 同一套 live 算法
+  const pipeLine = "sed -n '/elements = {/,/}/p' | tr -d '{}' | sed 's/elements = //'";
+  if (stSh.indexOf(pipeLine) < 0) {
+    console.error('HARNESS-FAIL: status/counts 管線分叉');
+    process.exit(1);
+  }
+  console.log('status-rich OK');
   console.log('HARNESS-DONE');
 })().catch((e) => { console.error('HARNESS-FAIL:', e.stack.split('\n').slice(0, 3).join(' | ')); process.exit(1); });

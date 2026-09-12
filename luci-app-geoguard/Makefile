@@ -1,8 +1,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-geoguard
-PKG_VERSION:=2.1.6
-PKG_RELEASE:=1
+PKG_VERSION:=2.1.7
+PKG_RELEASE:=2
 
 PKG_MAINTAINER:=chinoyan
 PKG_LICENSE:=MIT
