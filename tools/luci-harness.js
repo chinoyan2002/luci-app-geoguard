@@ -522,6 +522,11 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
     process.exit(1);
   }
   console.log('ban-buttons-same-row OK');
+  // 先摸一下防護數字框（dirty 才寫入，否則 pushBan 無寫斷言必倒）
+  const banNums = NODES.filter((n) => n.tag === 'input' && n.attrs && n.attrs.type === 'number');
+  if (banNums.length === 0) { console.error('HARNESS-FAIL: 找不到防護數字框'); process.exit(1); }
+  banNums[0].value = '7';
+  await banNums[0].fire('change');
   const execBeforeBan = execCalls.length;
   await banSaveBtn.fire('click');
   await unbanBtn.fire('click');
@@ -669,5 +674,19 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
     process.exit(1);
   }
   console.log('backend-static OK');
+  // 12l. 未觸碰各組就存檔：ban/sched/name 不得被動到（fallback 覆寫防線）
+  for (const o of OPTS) {
+    if (o._name && ['_banthresh', '_banscope', '_banperiod', '_sched', '_setnames', '_countries', '_whitelist'].includes(o._name) && typeof o.render === 'function')
+      await o.render.call({ map: fakeMap });
+  }
+  const snapGroups = () => JSON.stringify({ b: store.geoguard.main.ban_maxretry, s: store.geoguard.main.update_freq, n: store.geoguard.main.setname });
+  const snapBefore = snapGroups();
+  await saveBtn0.fire('click');
+  await banSaveBtn.fire('click');
+  if (snapGroups() !== snapBefore) {
+    console.error('HARNESS-FAIL: 未觸碰卻改寫分組值: ' + snapBefore + ' -> ' + snapGroups());
+    process.exit(1);
+  }
+  console.log('groups-clean-save OK');
   console.log('HARNESS-DONE');
 })().catch((e) => { console.error('HARNESS-FAIL:', e.stack.split('\n').slice(0, 3).join(' | ')); process.exit(1); });

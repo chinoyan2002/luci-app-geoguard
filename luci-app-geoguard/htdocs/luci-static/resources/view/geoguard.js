@@ -5,7 +5,7 @@
 'require ui';
 'require uci';
 
-var VERSION = '2.1.5';
+var VERSION = '2.1.6';
 var fmt = function(s) {
 	var args = Array.prototype.slice.call(arguments, 1);
 	var i = 0;
@@ -108,6 +108,9 @@ var wlState = [];
    unless the user actually touched them (unrendered-save data-loss class). */
 var countryDirty = false;
 var wlDirty = false;
+var banDirty = false;
+var schedDirty = false;
+var nameDirty = false;
 var countsDiv = null;
 var schedState = { freq: 'weekly', hour: '6', min: '0', auto: '1' };
 var nameState = { set: 'allowed-IPList', white: 'CustomAllow' };
@@ -134,12 +137,16 @@ function pushCountries() {
 	var i;
 	for (i = 0; i < OLD_GROUPS.length; i++)
 		uci.unset('geoguard', 'main', 'sel_' + OLD_GROUPS[i]);
-	uci.set('geoguard', 'main', 'update_freq', schedState.freq);
-	uci.set('geoguard', 'main', 'update_hour', schedState.hour);
-	uci.set('geoguard', 'main', 'update_min', schedState.min);
-	uci.set('geoguard', 'main', 'auto_update', schedState.auto);
-	uci.set('geoguard', 'main', 'setname', nameState.set || 'allowed-IPList');
-	uci.set('geoguard', 'main', 'white_name', nameState.white || 'CustomAllow');
+	if (schedDirty) {
+		uci.set('geoguard', 'main', 'update_freq', schedState.freq);
+		uci.set('geoguard', 'main', 'update_hour', schedState.hour);
+		uci.set('geoguard', 'main', 'update_min', schedState.min);
+		uci.set('geoguard', 'main', 'auto_update', schedState.auto);
+	}
+	if (nameDirty) {
+		uci.set('geoguard', 'main', 'setname', nameState.set || 'allowed-IPList');
+		uci.set('geoguard', 'main', 'white_name', nameState.white || 'CustomAllow');
+	}
 	if (wlDirty) {
 		if (wlState.length > 0)
 			uci.set('geoguard', 'main', 'whitelist', wlState.slice());
@@ -435,13 +442,14 @@ return view.extend({
 		o.render = function(section_id) {
 			nameState.set = uci.get('geoguard', 'main', 'setname') || 'allowed-IPList';
 			nameState.white = uci.get('geoguard', 'main', 'white_name') || 'CustomAllow';
+			nameDirty = false;
 			var mkName = function(dataName, val, cb) {
 				var inp = E('input', { 'type': 'text', 'class': 'cbi-input-text', 'data-name': dataName, 'style': 'width:15em;max-width:100%', 'value': val });
 				inp.addEventListener('change', function() { cb((inp.value || '').trim()); });
 				return inp;
 			};
-			var setInp = mkName('setname', nameState.set, function(v) { nameState.set = v; });
-			var whiteInp = mkName('white_name', nameState.white, function(v) { nameState.white = v; });
+				var setInp = mkName('setname', nameState.set, function(v) { nameDirty = true; nameState.set = v; });
+				var whiteInp = mkName('white_name', nameState.white, function(v) { nameDirty = true; nameState.white = v; });
 			var nameRow = function(title, desc, inp) {
 				return E('div', { 'class': 'cbi-value' }, [
 					E('label', { 'class': 'cbi-value-title' }, [title]),
@@ -469,13 +477,14 @@ return view.extend({
 			schedState.freq = freq;
 			schedState.hour = hour;
 			schedState.min = min;
+			schedDirty = false;
 			var freqSel = E('select', {}, [
 				E('option', { 'value': 'daily' }, [_('Daily')]),
 				E('option', { 'value': 'weekly' }, [_('Weekly (Sun)')]),
 				E('option', { 'value': 'monthly' }, [_('Monthly (1st)')])
 			]);
 			freqSel.value = freq;
-			freqSel.addEventListener('change', function() { schedState.freq = freqSel.value; });
+			freqSel.addEventListener('change', function() { schedDirty = true; schedState.freq = freqSel.value; });
 			var hourSel = E('select', {}, []);
 			var minSel = E('select', {}, []);
 			var i;
@@ -495,13 +504,13 @@ return view.extend({
 			}
 			hourSel.value = String(Number(hour));
 			minSel.value = String(Number(min));
-			hourSel.addEventListener('change', function() { schedState.hour = hourSel.value; });
-			minSel.addEventListener('change', function() { schedState.min = minSel.value; });
+			hourSel.addEventListener('change', function() { schedDirty = true; schedState.hour = hourSel.value; });
+			minSel.addEventListener('change', function() { schedDirty = true; schedState.min = minSel.value; });
 			var autoCb = E('input', { 'type': 'checkbox' });
 			if ((uci.get('geoguard', 'main', 'auto_update') || '1') === '1')
 				autoCb.checked = true;
 			schedState.auto = autoCb.checked ? '1' : '0';
-			autoCb.addEventListener('change', function() { schedState.auto = autoCb.checked ? '1' : '0'; });
+			autoCb.addEventListener('change', function() { schedDirty = true; schedState.auto = autoCb.checked ? '1' : '0'; });
 			return E('div', { 'class': 'cbi-value' }, [
 				E('label', { 'class': 'cbi-value-title' }, [_('Auto-update schedule')]),
 				E('div', { 'class': 'cbi-value-field' }, [
@@ -648,6 +657,8 @@ return view.extend({
 			});
 		};
 		var pushBan = function() {
+			if (!banDirty)
+				return;
 			uci.set('geoguard', 'main', 'ban_maxretry', banClamp(banState.maxretry, 1, 100, '8'));
 			uci.set('geoguard', 'main', 'ban_findtime', banClamp(banState.findtime, 1, 60, '5'));
 			uci.set('geoguard', 'main', 'ban_bantime', banClamp(banState.bantime, 1, 72, '2'));
@@ -658,14 +669,14 @@ return view.extend({
 		};
 		var numIn = function(val, min, max, cb) {
 			var inp = E('input', { 'type': 'number', 'min': String(min), 'max': String(max), 'value': val, 'style': 'width:5em;margin-right:0.3em' });
-			inp.addEventListener('change', function() { cb(inp.value); });
+			inp.addEventListener('change', function() { banDirty = true; cb(inp.value); });
 			return inp;
 		};
 		var flagIn = function(checked, cb) {
 			var cbx = E('input', { 'type': 'checkbox', 'style': 'margin-right:0.3em' });
 			if (checked === '1')
 				cbx.checked = true;
-			cbx.addEventListener('change', function() { cb(cbx.checked ? '1' : '0'); });
+			cbx.addEventListener('change', function() { banDirty = true; cb(cbx.checked ? '1' : '0'); });
 			return cbx;
 		};
 		var banRow = function(cells) {
@@ -684,6 +695,7 @@ return view.extend({
 			banState.maxretry = uci.get('geoguard', 'main', 'ban_maxretry') || '8';
 			banState.findtime = uci.get('geoguard', 'main', 'ban_findtime') || '5';
 			banState.bantime = uci.get('geoguard', 'main', 'ban_bantime') || '2';
+			banDirty = false;
 			return banRow([
 				[_('Within (minutes)'), numIn(banState.findtime, 1, 60, function(v) { banState.findtime = v; })],
 				[_('Fails to ban'), numIn(banState.maxretry, 1, 100, function(v) { banState.maxretry = v; })],
@@ -694,6 +706,7 @@ return view.extend({
 		o.render = function(section_id) {
 			banState.web = uci.get('geoguard', 'main', 'ban_web') || '1';
 			banState.ssh = uci.get('geoguard', 'main', 'ban_ssh') || '1';
+			banDirty = false;
 			return banRow([
 				[_('Guard LuCI web login'), flagIn(banState.web, function(v) { banState.web = v; })],
 				[_('Guard SSH login'), flagIn(banState.ssh, function(v) { banState.ssh = v; })]
@@ -725,6 +738,7 @@ return view.extend({
 		o.render = function(section_id) {
 			banState.ddnsint = uci.get('geoguard', 'main', 'ddns_interval') || '30';
 			banState.banint = uci.get('geoguard', 'main', 'ban_interval') || '60';
+			banDirty = false;
 			return banRow([
 				[_('DDNS check interval (min)'), numIn(banState.ddnsint, 1, 60, function(v) { banState.ddnsint = v; })],
 				[_('Log review and ban interval (sec)'), numIn(banState.banint, 5, 300, function(v) { banState.banint = v; })]
@@ -771,6 +785,9 @@ return view.extend({
 				pushBan();
 				return map.save(null, true).then(function() {
 					return robustApply();
+				}).then(function() {
+					/* keep cron in sync: ddns_interval may have changed above */
+					return fs.exec('/usr/bin/geoguard-cron');
 				}).then(function() {
 					return fs.exec('/usr/bin/geoguard-ban-guard');
 				}).then(function() {
