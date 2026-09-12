@@ -1,2 +1,8 @@
 __pycache__/
 *.pyc
+# local-only AI/dev notes, never publish
+AGENTS.md
+HANDOFF.md
+PITFALLS.md
+RUNBOOK.md
+SPEC.md
