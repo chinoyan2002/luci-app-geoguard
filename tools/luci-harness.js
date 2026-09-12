@@ -726,5 +726,34 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
     process.exit(1);
   }
   console.log('status-rich OK');
+  // 12o. v2.1.9 後端靜態斷言（孤兒掃蕩＋持久化＋M4）
+  const upd2 = fs.readFileSync(__dirname + '/../luci-app-geoguard/root/usr/bin/geoguard-update', 'utf8');
+  const ban2 = fs.readFileSync(__dirname + '/../luci-app-geoguard/root/usr/bin/geoguard-ban', 'utf8');
+  const unb2 = fs.readFileSync(__dirname + '/../luci-app-geoguard/root/usr/bin/geoguard-ban-unban', 'utf8');
+  const init2 = fs.readFileSync(__dirname + '/../luci-app-geoguard/root/etc/init.d/geoguard-ban', 'utf8');
+  const needs2 = [
+    [upd2, 'loadfile lives in our uploads dir', '孤兒掃蕩註解'],
+    [upd2, 'STALE_GONE="$STALE_GONE $nm"', '殘留追蹤'],
+    [ban2, 'persist_ban', '持久化寫入'],
+    [ban2, 'prune_persist', '過期清理'],
+    [ban2, 'Exit before auth', 'M4 dropbear 覆蓋'],
+    [ban2, "tr -d '<>'", '尖括號剝離'],
+    [unb2, 'ban-persist', '解封清 persist'],
+    [unb2, '|| true', 'grep 空行容錯'],
+    [init2, 'ban-persist.list', '開機還原'],
+    [init2, 'remaining time only', '剩餘時間註解'],
+  ];
+  for (const [src, needle, label] of needs2) {
+    if (src.indexOf(needle) < 0) {
+      console.error('HARNESS-FAIL: 缺 ' + label + ': ' + needle);
+      process.exit(1);
+    }
+  }
+  // MANAGED 舊迴圈必須退役（被命名空間掃蕩取代）
+  if (/for m in \$MANAGED/.test(upd2)) {
+    console.error('HARNESS-FAIL: MANAGED 舊迴圈還在');
+    process.exit(1);
+  }
+  console.log('persist-sweep OK');
   console.log('HARNESS-DONE');
 })().catch((e) => { console.error('HARNESS-FAIL:', e.stack.split('\n').slice(0, 3).join(' | ')); process.exit(1); });

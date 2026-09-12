@@ -1,6 +1,6 @@
 # 國門守衛 GeoGuard（luci-app-geoguard）
 
-OpenWrt LuCI App：勾選國家＋自訂白名單 → 從雙訂閱源抓取 IP 地理定位 CIDR → 合併成 firewall4 ipset 集合，另含登入防護（LuCI／SSH 爆破封鎖）與 DDNS 免封名單。IPv4 only，正體中文／English 雙語。
+OpenWrt LuCI App：勾選國家＋自訂白名單 → 從雙訂閱源抓取 IP 地理定位 CIDR → 合併成 firewall4 ipset 集合，另含登入防護（LuCI／SSH 爆破封鎖）與 DDNS 免封名單。IPv4 only（v6 流量不在覆蓋範圍）、正體中文／English 雙語。
 
 > 最新發佈：v2.1.6（預編包見 [Releases](https://github.com/chinoyan2002/luci-app-geoguard/releases)）
 
@@ -41,7 +41,7 @@ MIT，見 LICENSE。
 
 # GeoGuard (luci-app-geoguard) — English
 
-OpenWrt LuCI app: tick countries + custom whitelist → fetch IP-geolocation CIDRs from dual feeds → merge into firewall4 ipset sets. Also ships login guard (LuCI/SSH brute-force banning) and a DDNS no-ban list. IPv4 only, bilingual: Traditional Chinese / English.
+OpenWrt LuCI app: tick countries + custom whitelist → fetch IP-geolocation CIDRs from dual feeds → merge into firewall4 ipset sets. Also ships login guard (LuCI/SSH brute-force banning) and a DDNS no-ban list. IPv4 only (IPv6 traffic out of scope), bilingual: Traditional Chinese / English.
 
 > Latest release: v2.1.6 (prebuilt packages under [Releases](https://github.com/chinoyan2002/luci-app-geoguard/releases))
 

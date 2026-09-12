@@ -1,7 +1,7 @@
 # Maintainer: chinoyan <chinoyan2002@users.noreply.github.com>
 pkgname=luci-app-geoguard
-pkgver=2.1.8
-pkgrel=1
+pkgver=2.1.9
+pkgrel=2
 pkgdesc="GeoGuard - country allow-list IPS with login guard for firewall4 (LuCI)"
 url="https://github.com/chinoyan2002/luci-app-geoguard"
 arch="noarch"
@@ -13,7 +13,7 @@ subpackages="luci-i18n-geoguard-zh-tw:i18n_zhtw"
 
 package() {
 	mkdir -p "$pkgdir"
-	cp -a "$srcdir"/luci-app-geoguard_2.1.8/* "$pkgdir"/
+	cp -a "$srcdir"/luci-app-geoguard_2.1.9/* "$pkgdir"/
 }
 
 i18n_zhtw() {
