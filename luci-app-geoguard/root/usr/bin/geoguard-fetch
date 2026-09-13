@@ -25,7 +25,13 @@ if [ -d "$OLD_BASE" ]; then
             "$OLD_BASE"/ddns-allowlist.list "$OLD_BASE"/history.log \
             "$OLD_BASE"/cc-en.txt; do
     [ -e "$_mf" ] || continue
-    [ -s "$BASE_DIR/${_mf##*/}" ] || mv -f "$_mf" "$BASE_DIR/" 2>/dev/null
+    if [ -s "$BASE_DIR/${_mf##*/}" ]; then
+      # new copy already authoritative (written by current version); drop the
+      # stale old one (history.log merged below, not dropped)
+      [ "${_mf##*/}" = "history.log" ] || rm -f "$_mf" 2>/dev/null
+    else
+      mv -f "$_mf" "$BASE_DIR/" 2>/dev/null
+    fi
   done
   # history.log: prepend stranded old entries (chronological) instead of stranding them
   if [ -s "$OLD_BASE/history.log" ] && [ -s "$BASE_DIR/history.log" ]; then

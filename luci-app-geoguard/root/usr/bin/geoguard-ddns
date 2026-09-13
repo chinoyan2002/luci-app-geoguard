@@ -16,7 +16,11 @@ if [ -d /etc/luci-uploads ]; then
             /etc/luci-uploads/ddns-allowlist.list /etc/luci-uploads/history.log \
             /etc/luci-uploads/cc-en.txt; do
     [ -e "$_mf" ] || continue
-    [ -s "$BASE_DIR/${_mf##*/}" ] || mv -f "$_mf" "$BASE_DIR/" 2>/dev/null
+    if [ -s "$BASE_DIR/${_mf##*/}" ]; then
+      [ "${_mf##*/}" = "history.log" ] || rm -f "$_mf" 2>/dev/null
+    else
+      mv -f "$_mf" "$BASE_DIR/" 2>/dev/null
+    fi
   done
   if [ -s /etc/luci-uploads/history.log ] && [ -s "$BASE_DIR/history.log" ]; then
     cat /etc/luci-uploads/history.log "$BASE_DIR/history.log" > "$BASE_DIR/history.log.new" 2>/dev/null \

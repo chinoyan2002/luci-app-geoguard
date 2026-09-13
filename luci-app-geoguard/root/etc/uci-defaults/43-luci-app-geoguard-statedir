@@ -8,7 +8,11 @@ for f in "$OLD_DIR"/*.cidr "$OLD_DIR"/ban-persist.list \
          "$OLD_DIR"/ddns-allowlist.list "$OLD_DIR"/history.log \
          "$OLD_DIR"/cc-en.txt; do
   [ -e "$f" ] || continue
-  [ -s "$NEW_DIR/${f##*/}" ] || mv -f "$f" "$NEW_DIR/" 2>/dev/null
+  if [ -s "$NEW_DIR/${f##*/}" ]; then
+    [ "${f##*/}" = "history.log" ] || rm -f "$f" 2>/dev/null
+  else
+    mv -f "$f" "$NEW_DIR/" 2>/dev/null
+  fi
 done
 # history.log: prepend stranded old entries (chronological) instead of stranding them
 if [ -s "$OLD_DIR/history.log" ] && [ -s "$NEW_DIR/history.log" ]; then
