@@ -2,6 +2,8 @@
 # luci-app-geoguard prerm (opkg/ipk): drop our cron lines on removal.
 # Config + data stay behind for reinstall (standard conffile behavior).
 [ -n "$IPKG_INSTROOT" ] && exit 0
+/etc/init.d/geoguard-ban stop 2>/dev/null
+/etc/init.d/geoguard-ban disable 2>/dev/null
 sed -i '\#geoguard-update#d' /etc/crontabs/root 2>/dev/null
 sed -i '\#geoguard-ddns#d' /etc/crontabs/root 2>/dev/null
 /etc/init.d/cron restart >/dev/null 2>&1

@@ -1,6 +1,9 @@
 #!/bin/sh
-# luci-app-geoguard.pre-deinstall (apk): drop our cron lines on removal.
+# luci-app-geoguard.pre-deinstall (apk): stop service + drop our cron lines.
 # Config + data stay behind for reinstall.
+# (Without stop, procd keeps respawning the deleted guard binary.)
+/etc/init.d/geoguard-ban stop 2>/dev/null
+/etc/init.d/geoguard-ban disable 2>/dev/null
 sed -i '\#geoguard-update#d' /etc/crontabs/root 2>/dev/null
 sed -i '\#geoguard-ddns#d' /etc/crontabs/root 2>/dev/null
 /etc/init.d/cron restart >/dev/null 2>&1
