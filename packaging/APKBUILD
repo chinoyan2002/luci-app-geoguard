@@ -13,7 +13,7 @@ license="MIT"
 depends="busybox luci-base firewall4 wget-ssl jsonfilter"
 source="payload.tar.gz"
 options="!strip !check !tracedeps"
-install="luci-app-geoguard.post-install"
+install="luci-app-geoguard.post-install luci-app-geoguard.pre-deinstall"
 subpackages="luci-i18n-geoguard-zh-tw:i18n_zhtw"
 
 package() {

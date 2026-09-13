@@ -111,6 +111,8 @@ def main():
     open(os.path.join(stage_dir, 'CONTROL', 'conffiles'), 'w', encoding='utf-8', newline='').write('/etc/config/geoguard\n')
     shutil.copyfile(os.path.join(ROOT_DIR, 'packaging', 'ipk-postinst'),
                     os.path.join(stage_dir, 'CONTROL', 'postinst'))
+    shutil.copyfile(os.path.join(ROOT_DIR, 'packaging', 'ipk-prerm'),
+                    os.path.join(stage_dir, 'CONTROL', 'prerm'))
 
     # 3. Create tarball with strict modefix
     tgz_path = os.path.join(temp_dir, 'payload.tar.gz')
@@ -122,7 +124,7 @@ def main():
             ti.mode = 0o755
             return ti
         relp = ti.name[len(arc_prefix):] if ti.name.startswith(arc_prefix) else ti.name
-        if relp.startswith(exec_dirs) or relp == 'CONTROL/postinst':
+        if relp.startswith(exec_dirs) or relp in ('CONTROL/postinst', 'CONTROL/prerm'):
             ti.mode = 0o755
         else:
             ti.mode = 0o644
@@ -135,7 +137,9 @@ def main():
     # 4. Transfer to PVE
     for local_f, pve_f in [(tgz_path, '/tmp/payload.tar.gz'), (APKBUILD_PATH, '/tmp/APKBUILD'),
                            (os.path.join(ROOT_DIR, 'packaging', 'luci-app-geoguard.post-install'),
-                            '/tmp/luci-app-geoguard.post-install')]:
+                            '/tmp/luci-app-geoguard.post-install'),
+                           (os.path.join(ROOT_DIR, 'packaging', 'luci-app-geoguard.pre-deinstall'),
+                            '/tmp/luci-app-geoguard.pre-deinstall')]:
         r = subprocess.run(['scp', '-i', 'E:/Temp/opencode/pve_temp_readonly', '-o', 'BatchMode=yes',
                             local_f, f'root@192.168.1.250:{pve_f}'], capture_output=True)
         assert r.returncode == 0, r.stderr.decode('utf-8', errors='replace')
@@ -145,12 +149,13 @@ def main():
     pve_run('pct push 201 /tmp/payload.tar.gz /root/aports/payload.tar.gz', timeout=120)
     pve_run('pct push 201 /tmp/APKBUILD /root/aports/APKBUILD', timeout=60)
     pve_run('pct push 201 /tmp/luci-app-geoguard.post-install /root/aports/luci-app-geoguard.post-install', timeout=60)
+    pve_run('pct push 201 /tmp/luci-app-geoguard.pre-deinstall /root/aports/luci-app-geoguard.pre-deinstall', timeout=60)
     build_dir = f'/root/build/{APP}_{ver}'
     pve_run(f'pct exec 201 -- sh -c "mkdir -p /root/build && cd /root/build && rm -rf {APP}_{ver} && tar xzf /root/aports/payload.tar.gz && ls {APP}_{ver}"', timeout=120)
     pve_run(f'pct exec 201 -- sh -c "find {build_dir}/usr/bin {build_dir}/etc/init.d {build_dir}/etc/uci-defaults -type f -exec sh -n {{}} + && echo SH-ALL-OK"', timeout=120)
     pve_run('pct exec 201 -- sh -c "cp /home/builder/.abuild/*.rsa.pub /etc/apk/keys/"', timeout=60)
-    pve_run('pct exec 201 -- sh -c "cp /root/aports/payload.tar.gz /root/aports/APKBUILD /root/aports/luci-app-geoguard.post-install /home/builder/aports/ && '
-            'chown builder:builder /home/builder/aports/payload.tar.gz /home/builder/aports/APKBUILD /home/builder/aports/luci-app-geoguard.post-install && '
+    pve_run('pct exec 201 -- sh -c "cp /root/aports/payload.tar.gz /root/aports/APKBUILD /root/aports/luci-app-geoguard.post-install /root/aports/luci-app-geoguard.pre-deinstall /home/builder/aports/ && '
+            'chown builder:builder /home/builder/aports/payload.tar.gz /home/builder/aports/APKBUILD /home/builder/aports/luci-app-geoguard.post-install /home/builder/aports/luci-app-geoguard.pre-deinstall && '
             'rm -rf /home/builder/aports/src /home/builder/aports/pkg && '
             'su -s /bin/sh builder -c \\"cd /home/builder/aports && abuild checksum && abuild -d\\""', timeout=900)
     # 5b. (removed: apk dep surgery obsolete — APKBUILD lists busybox, which
