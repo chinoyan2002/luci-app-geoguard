@@ -20,6 +20,8 @@ if [ -z "$WANIF" ]; then
   [ -z "$WANIF" ] && WANIF="pppoe-wan"
 fi
 
+# Interface names go verbatim into nft; reject anything outside [A-Za-z0-9._-]
+case "$WANIF" in ''|*[!A-Za-z0-9._-]*) WANIF="pppoe-wan" ;; esac
 TMP=/tmp/luci-guard.new
 cat > "$TMP" <<EOF
 set geoguard_ban {

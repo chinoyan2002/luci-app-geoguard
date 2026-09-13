@@ -12,32 +12,17 @@ HIST="$BASE_DIR/history.log"
   && mv -f "$BASE_DIR/company-ddns.list" "$STATE" 2>/dev/null
 [ -f "$STATE" ] || : > "$STATE"
 
-# Cron trailing comments follow the LuCI system language.
-# WARNING: the four NOTE_* lines have identical copies in geoguard-cron;
+# Cron trailing comments are English-only (no locale data in shell code).
+# WARNING: the NOTE_DDNS line has an identical copy in geoguard-cron;
 # both sides must match byte-for-byte, otherwise this self-heal line
 # comparison never matches and rewrites+reloads cron every round.
-# (NOTE_*_ZH values are locale data picked by gg_cron_lang, not code comments.)
-NOTE_DDNS_ZH='# 國門守衛 DDNS 白名單追蹤（自動管理，請勿手改）'
-NOTE_DDNS_EN='# GeoGuard DDNS whitelist tracker (auto-managed, do not edit)'
-NOTE_UPDATE_ZH='# 國門守衛 IP 集合更新（自動管理，請勿手改）'
-NOTE_UPDATE_EN='# GeoGuard country IP sets updater (auto-managed, do not edit)'
-gg_cron_lang() {
-  case "$(uci -q get luci.main.lang 2>/dev/null)" in
-    zh*) echo 'zh' ;;
-    *) echo 'en' ;;
-  esac
-}
+NOTE_DDNS='# GeoGuard DDNS whitelist tracker (auto-managed, do not edit)'
 # Cron self-heal: a static line dropped by any path, or a changed interval, is repaired automatically
 DI=$(uci -q get geoguard.main.ddns_interval 2>/dev/null)
-case "$DI" in ''|*[!0-9]*) DI=3 ;; esac
+case "$DI" in ''|*[!0-9]*) DI=30 ;; esac
 [ "$DI" -lt 1 ] && DI=1
 [ "$DI" -gt 60 ] && DI=60
-if [ "$(gg_cron_lang)" = 'zh' ]; then
-  DNOTE="$NOTE_DDNS_ZH"
-else
-  DNOTE="$NOTE_DDNS_EN"
-fi
-DLINE="*/$DI * * * * /usr/bin/geoguard-ddns $DNOTE"
+DLINE="*/$DI * * * * /usr/bin/geoguard-ddns $NOTE_DDNS"
 grep -qxF "$DLINE" /etc/crontabs/root 2>/dev/null || {
   sed -i '\#geoguard-ddns#d' /etc/crontabs/root 2>/dev/null
   echo "$DLINE" >> /etc/crontabs/root

@@ -8,12 +8,14 @@ arch="noarch"
 license="MIT"
 depends="luci-base firewall4 wget-ssl jsonfilter"
 source="payload.tar.gz"
-options="!strip !check"
+options="!strip !check !tracedeps"
+install="luci-app-geoguard.post-install"
 subpackages="luci-i18n-geoguard-zh-tw:i18n_zhtw"
 
 package() {
 	mkdir -p "$pkgdir"
 	cp -a "$srcdir"/luci-app-geoguard_2.2.0/* "$pkgdir"/
+	rm -rf "$pkgdir"/CONTROL
 }
 
 i18n_zhtw() {

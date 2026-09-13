@@ -109,6 +109,8 @@ def main():
                'DDNS allowlist and login guard for firewall4 (LuCI, zh-TW/en)\n')
     open(os.path.join(stage_dir, 'CONTROL', 'control'), 'w', encoding='utf-8', newline='').write(control)
     open(os.path.join(stage_dir, 'CONTROL', 'conffiles'), 'w', encoding='utf-8', newline='').write('/etc/config/geoguard\n')
+    shutil.copyfile(os.path.join(ROOT_DIR, 'packaging', 'ipk-postinst'),
+                    os.path.join(stage_dir, 'CONTROL', 'postinst'))
 
     # 3. Create tarball with strict modefix
     tgz_path = os.path.join(temp_dir, 'payload.tar.gz')
@@ -120,7 +122,7 @@ def main():
             ti.mode = 0o755
             return ti
         relp = ti.name[len(arc_prefix):] if ti.name.startswith(arc_prefix) else ti.name
-        if relp.startswith(exec_dirs):
+        if relp.startswith(exec_dirs) or relp == 'CONTROL/postinst':
             ti.mode = 0o755
         else:
             ti.mode = 0o644
@@ -131,7 +133,9 @@ def main():
     print(f"Created payload: {os.path.getsize(tgz_path)} bytes")
 
     # 4. Transfer to PVE
-    for local_f, pve_f in [(tgz_path, '/tmp/payload.tar.gz'), (APKBUILD_PATH, '/tmp/APKBUILD')]:
+    for local_f, pve_f in [(tgz_path, '/tmp/payload.tar.gz'), (APKBUILD_PATH, '/tmp/APKBUILD'),
+                           (os.path.join(ROOT_DIR, 'packaging', 'luci-app-geoguard.post-install'),
+                            '/tmp/luci-app-geoguard.post-install')]:
         r = subprocess.run(['scp', '-i', 'E:/Temp/opencode/pve_temp_readonly', '-o', 'BatchMode=yes',
                             local_f, f'root@192.168.1.250:{pve_f}'], capture_output=True)
         assert r.returncode == 0, r.stderr.decode('utf-8', errors='replace')
@@ -140,14 +144,24 @@ def main():
     # 5. Execute build inside LXC 201
     pve_run('pct push 201 /tmp/payload.tar.gz /root/aports/payload.tar.gz', timeout=120)
     pve_run('pct push 201 /tmp/APKBUILD /root/aports/APKBUILD', timeout=60)
+    pve_run('pct push 201 /tmp/luci-app-geoguard.post-install /root/aports/luci-app-geoguard.post-install', timeout=60)
     build_dir = f'/root/build/{APP}_{ver}'
     pve_run(f'pct exec 201 -- sh -c "mkdir -p /root/build && cd /root/build && rm -rf {APP}_{ver} && tar xzf /root/aports/payload.tar.gz && ls {APP}_{ver}"', timeout=120)
     pve_run(f'pct exec 201 -- sh -c "find {build_dir}/usr/bin {build_dir}/etc/init.d {build_dir}/etc/uci-defaults -type f -exec sh -n {{}} + && echo SH-ALL-OK"', timeout=120)
     pve_run('pct exec 201 -- sh -c "cp /home/builder/.abuild/*.rsa.pub /etc/apk/keys/"', timeout=60)
-    pve_run('pct exec 201 -- sh -c "cp /root/aports/payload.tar.gz /root/aports/APKBUILD /home/builder/aports/ && '
-            'chown builder:builder /home/builder/aports/payload.tar.gz /home/builder/aports/APKBUILD && '
+    pve_run('pct exec 201 -- sh -c "cp /root/aports/payload.tar.gz /root/aports/APKBUILD /root/aports/luci-app-geoguard.post-install /home/builder/aports/ && '
+            'chown builder:builder /home/builder/aports/payload.tar.gz /home/builder/aports/APKBUILD /home/builder/aports/luci-app-geoguard.post-install && '
             'rm -rf /home/builder/aports/src /home/builder/aports/pkg && '
             'su -s /bin/sh builder -c \\"cd /home/builder/aports && abuild checksum && abuild -d\\""', timeout=900)
+    # 5b. Strip unresolvable auto-deps (OpenWrt apk has no /bin/sh provider;
+    # /bin/sh is always present via busybox) and re-sign.
+    for local_f, pve_f in [(os.path.join(ROOT_DIR, 'packaging', 'strip-deps.sh'),
+                            '/tmp/strip-deps.sh')]:
+        r = subprocess.run(['scp', '-i', 'E:/Temp/opencode/pve_temp_readonly', '-o', 'BatchMode=yes',
+                            local_f, f'root@192.168.1.250:{pve_f}'], capture_output=True)
+        assert r.returncode == 0, r.stderr.decode('utf-8', errors='replace')
+    pve_run('pct push 201 /tmp/strip-deps.sh /root/strip-deps.sh', timeout=60)
+    pve_run('pct exec 201 -- sh -c "cp /root/strip-deps.sh /home/builder/strip-deps.sh && chown builder:builder /home/builder/strip-deps.sh && su -s /bin/sh builder -c \'/bin/sh /home/builder/strip-deps.sh\'"', timeout=300)
     pve_run(f'pct exec 201 -- sh -c "cd /root/build && /root/ipkg-build-24.10 {APP}_{ver}"', timeout=300)
     print("Build completed inside LXC 201")
 
@@ -155,7 +169,7 @@ def main():
     pulls = [
         (f'/home/builder/packages/builder/x86_64/{APP}-{ver}-r{rel}.apk', f'{APP}_{ver}-r{rel}_all.apk'),
         (f'/home/builder/packages/builder/x86_64/luci-i18n-geoguard-zh-tw-{ver}-r{rel}.apk', f'luci-i18n-geoguard-zh-tw_{ver}-r{rel}_all.apk'),
-        ('/home/builder/.abuild/root-6aa40cae.rsa.pub', 'chinoyan-sign-6aa40cae.rsa.pub'),
+        ('/home/builder/.abuild/root-6aa40cae.rsa.pub', 'root-6aa40cae.rsa.pub'),
     ]
     # ipkg-build names the file from the source dir (ignores CONTROL release),
     # so discover the freshly built ipk instead of guessing.
@@ -172,7 +186,41 @@ def main():
         sha = hashlib.sha256(open(local_dst, 'rb').read()).hexdigest()
         print(f"Retrieved: {local} ({size} bytes, sha256: {sha[:16]}...)")
 
+    # 7. Structural verify of both apk files (gzip-member aware: member0 =
+    # signature tar, member1 = data tar; never concatenate, --cut breaks that).
+    for apk_local, want_post in ((f'{APP}_{ver}-r{rel}_all.apk', True),
+                                 (f'luci-i18n-geoguard-zh-tw_{ver}-r{rel}_all.apk', False)):
+        raw = open(os.path.join(out_dir, apk_local), 'rb').read()
+        offs = [i for i in range(len(raw)) if raw[i:i + 2] == b'\x1f\x8b']
+        assert len(offs) >= 2, f'{apk_local}: want 2+ gzip members, got {len(offs)}'
+        signames = tarfile.open(fileobj=io.BytesIO(_gz1(raw, offs[0]))).getnames()
+        assert any(n.startswith('.SIGN') for n in signames), f'{apk_local}: no .SIGN: {signames}'
+        ctlnames = tarfile.open(fileobj=io.BytesIO(_gz1(raw, offs[1]))).getnames()
+        assert '.PKGINFO' in ctlnames, f'{apk_local}: control w/o PKGINFO: {ctlnames}'
+        has_post = '.post-install' in ctlnames
+        assert has_post == want_post, f'{apk_local}: control .post-install={has_post}'
+        data = _gz1(raw, offs[-1])
+        dtar = tarfile.open(fileobj=io.BytesIO(data))
+        names = dtar.getnames()
+        assert '.PKGINFO' in names, f'{apk_local}: .PKGINFO missing: {names[:6]}'
+        assert not any(n.startswith('CONTROL') for n in names), f'{apk_local}: stray CONTROL/'
+        info = tarfile.open(fileobj=io.BytesIO(_gz1(raw, offs[1]))).extractfile('.PKGINFO').read().decode()
+        assert 'depend = /bin/sh' not in info, f'{apk_local}: /bin/sh dep still present'
+        dh = [l for l in info.split('\n') if l.startswith('datahash')][0].split('=')[1].strip()
+        assert hashlib.sha256(raw[offs[-1]:]).hexdigest() == dh, f'{apk_local}: datahash mismatch'
+        assert not any(n.startswith('CONTROL') for n in names), f'{apk_local}: stray CONTROL/'
+        print(f"Verified apk structure: {apk_local} (control={ctlnames} data={len(names)} entries)")
+
     print(f"=== All artifacts saved in {out_dir} ===")
+
+
+def _gz1(raw, off):
+    """Decompress a single gzip member starting at off."""
+    import zlib
+    d = zlib.decompressobj(31)
+    out = d.decompress(raw[off:])
+    assert d.eof, 'truncated gzip member'
+    return out
 
 
 if __name__ == '__main__':

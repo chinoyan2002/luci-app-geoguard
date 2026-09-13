@@ -1,0 +1,11 @@
+#!/bin/sh
+# luci-app-geoguard.post-install (apk): run our uci-defaults once now,
+# then remove them (a factory-flashed image runs them at first boot instead).
+for f in /etc/uci-defaults/40-luci-app-geoguard \
+         /etc/uci-defaults/41-luci-app-geoguard-ban \
+         /etc/uci-defaults/42-luci-app-geoguard-migrate; do
+	[ -f "$f" ] || continue
+	sh "$f"
+	rm -f "$f"
+done
+exit 0
