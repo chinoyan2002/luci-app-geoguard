@@ -434,7 +434,7 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
   // 12. 防護籤：ban 欄位存在（taboption 有名）＋兩鍵同列＋行為
   const banOpts = OPTS.filter((o) => o._tab === 'ban' && o._name);
   const banNames = banOpts.map((o) => o._name);
-  for (const need of ['ban_enabled', '_banthresh', '_banscope', 'ban_exempt', 'company_ddns', '_banperiod', 'ban_wan_if', '_bannote', '_banstatus', '_banactions']) {
+  for (const need of ['ban_enabled', '_banthresh', '_banscope', 'ban_exempt', 'ddns_allowlist', '_banperiod', 'ban_wan_if', '_bannote', '_banstatus', '_banactions']) {
     if (!banNames.includes(need)) {
       console.error('HARNESS-FAIL: 防護籤缺欄位 ' + need + ' (有: ' + JSON.stringify(banNames) + ')');
       process.exit(1);
@@ -451,7 +451,7 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
   console.log('tab-order OK');
   // 12a2. 防護籤列順：enabled, thresh, scope, exempt, ddns, period, wan, note, status, actions
   const banSeq = OPTS.filter((o) => o._tab === 'ban').map((o) => o._name);
-  const wantSeq = ['ban_enabled', '_banthresh', '_banscope', 'ban_exempt', 'company_ddns', '_banperiod', 'ban_wan_if', '_bannote', '_banstatus', '_banactions'];
+  const wantSeq = ['ban_enabled', '_banthresh', '_banscope', 'ban_exempt', 'ddns_allowlist', '_banperiod', 'ban_wan_if', '_bannote', '_banstatus', '_banactions'];
   if (JSON.stringify(banSeq) !== JSON.stringify(wantSeq)) {
     console.error('HARNESS-FAIL: 防護列順錯誤: ' + JSON.stringify(banSeq));
     process.exit(1);
@@ -467,7 +467,7 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
   // 12b. 防護籤：DDNS 清單＋間隔欄位存在（已從設定籤搬家）
   const banOpts2 = OPTS.filter((o) => o._tab === 'ban' && o._name);
   const banNames2 = banOpts2.map((o) => o._name);
-  for (const need of ['company_ddns']) {
+  for (const need of ['ddns_allowlist']) {
     if (!banNames2.includes(need)) {
       console.error('HARNESS-FAIL: 防護籤缺DDNS欄位 ' + need);
       process.exit(1);
@@ -621,17 +621,23 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
   }
   fsStub.exec = realExec;
   console.log('rapid-click OK');
-  // 12g. cron 註解：兩檔四句一字不差＋有用 $DNOTE/$UNOTE
+  // 12g. cron 註解：英文唯一＋兩檔 NOTE_DDNS 一字不差＋有用 $DNOTE/$UNOTE
   const cronSh = fs.readFileSync(__dirname + '/../luci-app-geoguard/root/usr/bin/geoguard-cron', 'utf8');
   const ddnsSh = fs.readFileSync(__dirname + '/../luci-app-geoguard/root/usr/bin/geoguard-ddns', 'utf8');
-  const noteLines = (s) => s.split('\n').filter((l) => /^NOTE_(DDNS|UPDATE)_(ZH|EN)=/.test(l)).sort();
-  const cn = noteLines(cronSh);
-  const dn = noteLines(ddnsSh);
-  if (cn.length !== 4 || JSON.stringify(cn) !== JSON.stringify(dn)) {
+  const noteOf = (s, n) => { const m = s.match(new RegExp('^NOTE_' + n + "='(.*)'$", 'm')); return m && m[1]; };
+  if (!noteOf(cronSh, 'DDNS') || !noteOf(cronSh, 'UPDATE')) {
+    console.error('HARNESS-FAIL: cron 缺 NOTE');
+    process.exit(1);
+  }
+  if (noteOf(ddnsSh, 'DDNS') !== noteOf(cronSh, 'DDNS')) {
     console.error('HARNESS-FAIL: cron 註解兩檔不一致');
     process.exit(1);
   }
-  if (cronSh.indexOf('$DNOTE') < 0 || cronSh.indexOf('$UNOTE') < 0 || ddnsSh.indexOf('$DNOTE') < 0) {
+  if (/[\u4e00-\u9fff]/.test(noteOf(cronSh, 'DDNS') + noteOf(cronSh, 'UPDATE'))) {
+    console.error('HARNESS-FAIL: cron 註解殘留中文');
+    process.exit(1);
+  }
+  if (cronSh.indexOf('$DNOTE') < 0 || cronSh.indexOf('$UNOTE') < 0 || ddnsSh.indexOf('$NOTE_DDNS') < 0) {
     console.error('HARNESS-FAIL: cron 註解未使用');
     process.exit(1);
   }

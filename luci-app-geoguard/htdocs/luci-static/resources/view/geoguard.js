@@ -158,7 +158,7 @@ function pushCountries() {
 
 function checkSetname() {
 	var sn = uci.get('geoguard', 'main', 'setname') || '';
-	var wn = uci.get('geoguard', 'main', 'white_name') || 'MyAllowed';
+	var wn = uci.get('geoguard', 'main', 'white_name') || 'CustomAllow';
 	var ok = function(v) { return /^[A-Za-z][A-Za-z0-9_-]*$/.test(v); };
 	return ok(sn) && ok(wn);
 }
@@ -749,7 +749,7 @@ return view.extend({
 		};
 		o.rmempty = true;
 		o.description = _('IPs/subnets here are never banned. Defaults already cover reserved and private ranges. Two more auto-exempt sources need no entry here: IP whitelist (IP Sets tab) and DDNS whitelist (below), whose IPs follow automatically.');
-		o = s.taboption('ban', form.DynamicList, 'company_ddns', _('DDNS allowlist'));
+		o = s.taboption('ban', form.DynamicList, 'ddns_allowlist', _('DDNS allowlist'));
 		o.validate = function(section_id, value) {
 			if (!value || !value.trim())
 				return true;
