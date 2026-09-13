@@ -2,9 +2,684 @@ msgid ""
 msgstr ""
 "Project-Id-Version: luci-app-geoguard\n"
 "Content-Type: text/plain; charset=UTF-8\n"
+"Language: zh_Hant\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "AFGHANISTAN"
+msgstr "阿富汗"
+
+msgid "ARMENIA"
+msgstr "亞美尼亞"
+
+msgid "AZERBAIJAN"
+msgstr "亞塞拜然"
+
+msgid "BANGLADESH"
+msgstr "孟加拉"
+
+msgid "BAHRAIN"
+msgstr "巴林"
+
+msgid "BRUNEI"
+msgstr "汶萊"
+
+msgid "BHUTAN"
+msgstr "不丹"
+
+msgid "CHINA"
+msgstr "中國"
+
+msgid "CYPRUS"
+msgstr "塞普勒斯"
+
+msgid "GEORGIA"
+msgstr "喬治亞"
+
+msgid "HONG KONG"
+msgstr "香港"
+
+msgid "INDONESIA"
+msgstr "印尼"
+
+msgid "ISRAEL"
+msgstr "以色列"
+
+msgid "INDIA"
+msgstr "印度"
+
+msgid "IRAQ"
+msgstr "伊拉克"
+
+msgid "IRAN"
+msgstr "伊朗"
+
+msgid "JORDAN"
+msgstr "約旦"
+
+msgid "JAPAN"
+msgstr "日本"
+
+msgid "KYRGYZSTAN"
+msgstr "吉爾吉斯"
+
+msgid "CAMBODIA"
+msgstr "柬埔寨"
+
+msgid "NORTH KOREA"
+msgstr "北韓"
+
+msgid "SOUTH KOREA"
+msgstr "南韓"
+
+msgid "KUWAIT"
+msgstr "科威特"
+
+msgid "KAZAKHSTAN"
+msgstr "哈薩克"
+
+msgid "LAOS"
+msgstr "寮國"
+
+msgid "LEBANON"
+msgstr "黎巴嫩"
+
+msgid "SRI LANKA"
+msgstr "斯里蘭卡"
+
+msgid "MYANMAR"
+msgstr "緬甸"
+
+msgid "MONGOLIA"
+msgstr "蒙古"
+
+msgid "MACAO"
+msgstr "澳門"
+
+msgid "MALAYSIA"
+msgstr "馬來西亞"
+
+msgid "NEPAL"
+msgstr "尼泊爾"
+
+msgid "OMAN"
+msgstr "阿曼"
+
+msgid "PHILIPPINES"
+msgstr "菲律賓"
+
+msgid "PAKISTAN"
+msgstr "巴基斯坦"
+
+msgid "PALESTINE"
+msgstr "巴勒斯坦"
+
+msgid "QATAR"
+msgstr "卡達"
+
+msgid "SAUDI ARABIA"
+msgstr "沙烏地阿拉伯"
+
+msgid "SINGAPORE"
+msgstr "新加坡"
+
+msgid "SYRIA"
+msgstr "敘利亞"
+
+msgid "THAILAND"
+msgstr "泰國"
+
+msgid "TAJIKISTAN"
+msgstr "塔吉克"
+
+msgid "TIMOR-LESTE"
+msgstr "東帝汶"
+
+msgid "TURKMENISTAN"
+msgstr "土庫曼"
+
+msgid "TURKEY"
+msgstr "土耳其"
+
+msgid "TAIWAN"
+msgstr "台灣"
+
+msgid "UZBEKISTAN"
+msgstr "烏茲別克"
+
+msgid "VIETNAM"
+msgstr "越南"
+
+msgid "YEMEN"
+msgstr "葉門"
+
+msgid "ANDORRA"
+msgstr "安道爾"
+
+msgid "ALBANIA"
+msgstr "阿爾巴尼亞"
+
+msgid "AUSTRIA"
+msgstr "奧地利"
+
+msgid "ALAND ISLANDS"
+msgstr "奧蘭群島"
+
+msgid "BOSNIA AND HERZEGOVINA"
+msgstr "波士尼亞"
+
+msgid "BELGIUM"
+msgstr "比利時"
+
+msgid "BULGARIA"
+msgstr "保加利亞"
+
+msgid "BELARUS"
+msgstr "白俄羅斯"
+
+msgid "SWITZERLAND"
+msgstr "瑞士"
+
+msgid "CZECHIA"
+msgstr "捷克"
+
+msgid "GERMANY"
+msgstr "德國"
+
+msgid "DENMARK"
+msgstr "丹麥"
+
+msgid "ESTONIA"
+msgstr "愛沙尼亞"
+
+msgid "SPAIN"
+msgstr "西班牙"
+
+msgid "FINLAND"
+msgstr "芬蘭"
+
+msgid "FAROE ISLANDS"
+msgstr "法羅群島"
+
+msgid "FRANCE"
+msgstr "法國"
+
+msgid "UNITED KINGDOM"
+msgstr "英國"
+
+msgid "GUERNSEY"
+msgstr "根西島"
+
+msgid "GIBRALTAR"
+msgstr "直布羅陀"
+
+msgid "GREECE"
+msgstr "希臘"
+
+msgid "CROATIA"
+msgstr "克羅埃西亞"
+
+msgid "HUNGARY"
+msgstr "匈牙利"
+
+msgid "IRELAND"
+msgstr "愛爾蘭"
+
+msgid "ISLE OF MAN"
+msgstr "曼島"
+
+msgid "ICELAND"
+msgstr "冰島"
+
+msgid "ITALY"
+msgstr "義大利"
+
+msgid "JERSEY"
+msgstr "澤西島"
+
+msgid "LIECHTENSTEIN"
+msgstr "列支敦斯登"
+
+msgid "LITHUANIA"
+msgstr "立陶宛"
+
+msgid "LUXEMBOURG"
+msgstr "盧森堡"
+
+msgid "LATVIA"
+msgstr "拉脫維亞"
+
+msgid "MONACO"
+msgstr "摩納哥"
+
+msgid "MOLDOVA"
+msgstr "摩爾多瓦"
+
+msgid "MONTENEGRO"
+msgstr "蒙特內哥羅"
+
+msgid "NORTH MACEDONIA"
+msgstr "北馬其頓"
+
+msgid "MALTA"
+msgstr "馬爾他"
+
+msgid "NETHERLANDS"
+msgstr "荷蘭"
+
+msgid "NORWAY"
+msgstr "挪威"
+
+msgid "POLAND"
+msgstr "波蘭"
+
+msgid "PORTUGAL"
+msgstr "葡萄牙"
+
+msgid "ROMANIA"
+msgstr "羅馬尼亞"
+
+msgid "SERBIA"
+msgstr "塞爾維亞"
+
+msgid "RUSSIA"
+msgstr "俄羅斯"
+
+msgid "SWEDEN"
+msgstr "瑞典"
+
+msgid "SLOVENIA"
+msgstr "斯洛維尼亞"
+
+msgid "SLOVAKIA"
+msgstr "斯洛伐克"
+
+msgid "SAN MARINO"
+msgstr "聖馬利諾"
+
+msgid "UKRAINE"
+msgstr "烏克蘭"
+
+msgid "VATICAN CITY"
+msgstr "梵蒂岡"
+
+msgid "ALGERIA"
+msgstr "阿爾及利亞"
+
+msgid "ANGOLA"
+msgstr "安哥拉"
+
+msgid "BENIN"
+msgstr "貝南"
+
+msgid "BOTSWANA"
+msgstr "波札那"
+
+msgid "BURKINA FASO"
+msgstr "布吉納法索"
+
+msgid "BURUNDI"
+msgstr "蒲隆地"
+
+msgid "CAMEROON"
+msgstr "喀麥隆"
+
+msgid "CABO VERDE"
+msgstr "維德角"
+
+msgid "CENTRAL AFRICAN REPUBLIC"
+msgstr "中非"
+
+msgid "CHAD"
+msgstr "查德"
+
+msgid "COMOROS"
+msgstr "葛摩"
+
+msgid "CONGO"
+msgstr "剛果"
+
+msgid "DEMOCRATIC REPUBLIC OF THE CONGO"
+msgstr "剛果民主"
+
+msgid "DJIBOUTI"
+msgstr "吉布地"
+
+msgid "EGYPT"
+msgstr "埃及"
+
+msgid "EQUATORIAL GUINEA"
+msgstr "赤道幾內亞"
+
+msgid "ERITREA"
+msgstr "厄利垂亞"
+
+msgid "ETHIOPIA"
+msgstr "衣索比亞"
+
+msgid "GABON"
+msgstr "加彭"
+
+msgid "GAMBIA"
+msgstr "甘比亞"
+
+msgid "GHANA"
+msgstr "迦納"
+
+msgid "GUINEA"
+msgstr "幾內亞"
+
+msgid "GUINEA-BISSAU"
+msgstr "幾內亞比索"
+
+msgid "KENYA"
+msgstr "肯亞"
+
+msgid "LIBERIA"
+msgstr "賴比瑞亞"
+
+msgid "LESOTHO"
+msgstr "賴索托"
+
+msgid "LIBYA"
+msgstr "利比亞"
+
+msgid "MOROCCO"
+msgstr "摩洛哥"
+
+msgid "MADAGASCAR"
+msgstr "馬達加斯加"
+
+msgid "MALI"
+msgstr "馬利"
+
+msgid "MAURITANIA"
+msgstr "茅利塔尼亞"
+
+msgid "MAURITIUS"
+msgstr "模里西斯"
+
+msgid "MALAWI"
+msgstr "馬拉威"
+
+msgid "MOZAMBIQUE"
+msgstr "莫三比克"
+
+msgid "NAMIBIA"
+msgstr "納米比亞"
+
+msgid "NIGER"
+msgstr "尼日"
+
+msgid "NIGERIA"
+msgstr "奈及利亞"
+
+msgid "RWANDA"
+msgstr "盧安達"
+
+msgid "SEYCHELLES"
+msgstr "塞席爾"
+
+msgid "SUDAN"
+msgstr "蘇丹"
+
+msgid "SAINT HELENA"
+msgstr "聖赫勒拿島"
+
+msgid "SIERRA LEONE"
+msgstr "獅子山"
+
+msgid "SENEGAL"
+msgstr "塞內加爾"
+
+msgid "SOMALIA"
+msgstr "索馬利亞"
+
+msgid "SOUTH SUDAN"
+msgstr "南蘇丹"
+
+msgid "SAO TOME AND PRINCIPE"
+msgstr "聖多美普林西比"
+
+msgid "ESWATINI"
+msgstr "史瓦帝尼"
+
+msgid "TOGO"
+msgstr "多哥"
+
+msgid "TUNISIA"
+msgstr "突尼西亞"
+
+msgid "TANZANIA"
+msgstr "坦尚尼亞"
+
+msgid "UGANDA"
+msgstr "烏干達"
+
+msgid "SOUTH AFRICA"
+msgstr "南非"
+
+msgid "ZAMBIA"
+msgstr "尚比亞"
+
+msgid "ZIMBABWE"
+msgstr "辛巴威"
+
+msgid "ANTIGUA AND BARBUDA"
+msgstr "安地卡及巴布達"
+
+msgid "ANGUILLA"
+msgstr "安圭拉"
+
+msgid "BAHAMAS"
+msgstr "巴哈馬"
+
+msgid "BARBADOS"
+msgstr "巴貝多"
+
+msgid "BELIZE"
+msgstr "貝里斯"
+
+msgid "BERMUDA"
+msgstr "百慕達"
+
+msgid "CANADA"
+msgstr "加拿大"
+
+msgid "COSTA RICA"
+msgstr "哥斯大黎加"
+
+msgid "CUBA"
+msgstr "古巴"
+
+msgid "DOMINICA"
+msgstr "多米尼克"
+
+msgid "DOMINICAN REPUBLIC"
+msgstr "多明尼加"
+
+msgid "EL SALVADOR"
+msgstr "薩爾瓦多"
+
+msgid "GRENADA"
+msgstr "格瑞那達"
+
+msgid "GREENLAND"
+msgstr "格陵蘭"
+
+msgid "GUATEMALA"
+msgstr "瓜地馬拉"
+
+msgid "HAITI"
+msgstr "海地"
+
+msgid "HONDURAS"
+msgstr "宏都拉斯"
+
+msgid "JAMAICA"
+msgstr "牙買加"
+
+msgid "CAYMAN ISLANDS"
+msgstr "開曼群島"
+
+msgid "MEXICO"
+msgstr "墨西哥"
+
+msgid "MONTSERRAT"
+msgstr "蒙哲臘"
+
+msgid "NICARAGUA"
+msgstr "尼加拉瓜"
+
+msgid "PANAMA"
+msgstr "巴拿馬"
+
+msgid "SAINT PIERRE AND MIQUELON"
+msgstr "聖皮耶密克隆"
+
+msgid "PUERTO RICO"
+msgstr "波多黎各"
+
+msgid "TRINIDAD AND TOBAGO"
+msgstr "千里達及托巴哥"
+
+msgid "UNITED STATES"
+msgstr "美國"
+
+msgid "VIRGIN ISLANDS (BRITISH)"
+msgstr "英屬維京群島"
+
+msgid "VIRGIN ISLANDS (US)"
+msgstr "美屬維京群島"
+
+msgid "ARGENTINA"
+msgstr "阿根廷"
+
+msgid "BOLIVIA"
+msgstr "玻利維亞"
+
+msgid "BRAZIL"
+msgstr "巴西"
+
+msgid "CHILE"
+msgstr "智利"
+
+msgid "COLOMBIA"
+msgstr "哥倫比亞"
+
+msgid "ECUADOR"
+msgstr "厄瓜多"
+
+msgid "FALKLAND ISLANDS"
+msgstr "福克蘭群島"
+
+msgid "GUYANA"
+msgstr "蓋亞那"
+
+msgid "PARAGUAY"
+msgstr "巴拉圭"
+
+msgid "PERU"
+msgstr "秘魯"
+
+msgid "SURINAME"
+msgstr "蘇利南"
+
+msgid "URUGUAY"
+msgstr "烏拉圭"
+
+msgid "VENEZUELA"
+msgstr "委內瑞拉"
+
+msgid "AMERICAN SAMOA"
+msgstr "美屬薩摩亞"
+
+msgid "AUSTRALIA"
+msgstr "澳洲"
+
+msgid "COOK ISLANDS"
+msgstr "庫克群島"
+
+msgid "FIJI"
+msgstr "斐濟"
+
+msgid "MICRONESIA"
+msgstr "密克羅尼西亞"
+
+msgid "GUAM"
+msgstr "關島"
+
+msgid "KIRIBATI"
+msgstr "吉里巴斯"
+
+msgid "MARSHALL ISLANDS"
+msgstr "馬紹爾群島"
+
+msgid "NEW CALEDONIA"
+msgstr "新喀里多尼亞"
+
+msgid "NAURU"
+msgstr "諾魯"
+
+msgid "NIUE"
+msgstr "紐埃"
+
+msgid "NEW ZEALAND"
+msgstr "紐西蘭"
+
+msgid "FRENCH POLYNESIA"
+msgstr "法屬玻里尼西亞"
+
+msgid "PAPUA NEW GUINEA"
+msgstr "巴布亞紐幾內亞"
+
+msgid "PALAU"
+msgstr "帛琉"
+
+msgid "SOLOMON ISLANDS"
+msgstr "索羅門群島"
+
+msgid "TOKELAU"
+msgstr "托克勞"
+
+msgid "TONGA"
+msgstr "東加"
+
+msgid "TUVALU"
+msgstr "吐瓦魯"
+
+msgid "VANUATU"
+msgstr "萬那杜"
+
+msgid "WALLIS AND FUTUNA"
+msgstr "瓦利斯和富圖納"
+
+msgid "SAMOA"
+msgstr "薩摩亞"
 
 msgid "Invalid format: enter a single IP (e.g. 203.0.113.10), CIDR (e.g. 203.0.113.0/24) or range (e.g. 203.0.113.10-203.0.113.50)"
 msgstr "格式錯誤：請輸入單一 IP（如 203.0.113.10）、CIDR（如 203.0.113.0/24）或範圍（如 203.0.113.10-203.0.113.50）"
+
+msgid "Status script failed"
+msgstr "狀態腳本執行失敗"
+
+msgid "Status script failed: %s"
+msgstr "狀態腳本執行失敗：%s"
+
+msgid "Latest merged IP set file: no data yet"
+msgstr "目前最新合併的IPs集合檔：尚無資料"
+
+msgid "Latest merged IP set file: /etc/luci-uploads/%s.cidr (%s lines / live %s entries / updated %s, checked %s — no changes)"
+msgstr "目前最新合併的IPs集合檔：/etc/luci-uploads/%s.cidr（%s 行 / live %s 段 / 更新於 %s，%s 已檢查無變動）"
+
+msgid "Latest merged IP set file: /etc/luci-uploads/%s.cidr (%s lines / live %s entries / updated %s)"
+msgstr "目前最新合併的IPs集合檔：/etc/luci-uploads/%s.cidr（%s 行 / live %s 段 / 更新於 %s）"
+
+msgid "GeoGuard Ver:"
+msgstr "國門守衛 GeoGuard Ver:"
+
+msgid "Select countries + whitelist IPs into merged IP set files. This page only builds IP sets; apply them yourself under Firewall - Port Forwards by picking the set in a rule."
+msgstr "勾選國家＋白名單 IP，合併成IPs集合檔。本頁只生產 IPs 集合，請自行到 防火牆 - 連接埠轉發，選取規則-使用 IPs 集合"
 
 msgid "Settings"
 msgstr "設定"
@@ -48,6 +723,9 @@ msgstr "選擇國家"
 msgid "Delete"
 msgstr "刪除"
 
+msgid "e.g. 203.0.113.10, 203.0.113.0/24, 203.0.113.10-203.0.113.50"
+msgstr "例如 203.0.113.10、203.0.113.0/24、203.0.113.10-203.0.113.50"
+
 msgid "Add"
 msgstr "新增"
 
@@ -57,8 +735,14 @@ msgstr "除國家外要包含的 白名單：IP / CIDR / 範圍"
 msgid "Formats: single IP, CIDR, A-B range. No country + IPs = pure whitelist."
 msgstr "格式：單一 IP、CIDR、A-B 範圍。國家全空＋有 IP＝純白名單。"
 
+msgid "IP Geolocation - Primary Feed"
+msgstr "IP地理定位-主要訂閱源"
+
 msgid "{cc} becomes the lowercase code, {CC} uppercase."
 msgstr "{cc} 會換成國碼小寫，{CC} 大寫。"
+
+msgid "IP Geolocation - Backup Feed"
+msgstr "IP地理定位-備用訂閱源"
 
 msgid "Falls back on failure; keeps the old file if both fail."
 msgstr "失敗改抓備用；抓不到沿用舊檔。"
@@ -83,6 +767,9 @@ msgstr "每週日"
 
 msgid "Monthly (1st)"
 msgstr "每月 1 日"
+
+msgid "Enable auto-update of feed sets"
+msgstr "啟用自動更新訂閱源集合"
 
 msgid "Auto-update schedule"
 msgstr "自動更新清單頻率"
@@ -117,11 +804,20 @@ msgstr "執行失敗：%s"
 msgid "Update IP Sets Now"
 msgstr "立即更新 IP 集合"
 
+msgid "IP sets updated (fetch only, not merged)"
+msgstr "IP 集合已更新（僅抓檔，未合併重載）"
+
 msgid "Update and Merge Now"
 msgstr "立即更新並合併"
 
+msgid "Updated and merged successfully (incl. whitelist)"
+msgstr "已成功更新並合併（含白名單）"
+
 msgid "Save Settings"
 msgstr "儲存設定"
+
+msgid "Settings saved (schedule synced)"
+msgstr "設定已儲存（排程已同步）"
 
 msgid "Clear Update History"
 msgstr "清除更新歷史"
@@ -129,8 +825,17 @@ msgstr "清除更新歷史"
 msgid "Update history cleared"
 msgstr "更新歷史已清除"
 
+msgid "Reload Log"
+msgstr "重新載入紀錄"
+
+msgid "Enable this option to block IP addresses with too many failed logins"
+msgstr "啟用此選項來封鎖登入失敗次數過多的 IP 位址"
+
 msgid "Disabling stops the guard service; active bans stay until expiry."
 msgstr "關閉即停掉防護服務，已封鎖的不自動解封。"
+
+msgid "Within (minutes)"
+msgstr "在幾（分鐘）內"
 
 msgid "Fails to ban"
 msgstr "失敗幾次封鎖"
@@ -143,6 +848,9 @@ msgstr "防護 LuCI 網頁登入"
 
 msgid "Guard SSH login"
 msgstr "防護 SSH 登入"
+
+msgid "Never-block whitelist"
+msgstr "永不封鎖的白名單"
 
 msgid "Enter an IP or CIDR (e.g. 192.168.0.0/16)"
 msgstr "請輸入 IP 或 CIDR（如 192.168.0.0/16）"
@@ -161,6 +869,9 @@ msgstr "可新增多筆；每筆獨立追 IP。本清單只適用防護免封，
 
 msgid "DDNS check interval (min)"
 msgstr "DDNS 檢查間隔（分鐘）"
+
+msgid "Log review and ban interval (sec)"
+msgstr "檢視記錄並封鎖的間隔（秒）"
 
 msgid "WAN interface (auto-detect)"
 msgstr "外網介面（自動偵測）"
@@ -189,66 +900,8 @@ msgstr "已全部解封"
 msgid "Save & Restart Guard"
 msgstr "儲存防護設定並重啟"
 
-msgid "GeoGuard"
-msgstr "國門守衛 GeoGuard"
-
-msgid "GeoGuard Ver:"
-msgstr "國門守衛 GeoGuard Ver:"
-
-msgid "Never-block whitelist"
-msgstr "永不封鎖的白名單"
-
-msgid "Within (minutes)"
-msgstr "在幾（分鐘）內"
-
-msgid "Log review and ban interval (sec)"
-msgstr "檢視記錄並封鎖的間隔（秒）"
-
-msgid "IP Geolocation - Primary Feed"
-msgstr "IP地理定位-主要訂閱源"
-
-msgid "IP Geolocation - Backup Feed"
-msgstr "IP地理定位-備用訂閱源"
-
-msgid "Enable this option to block IP addresses with too many failed logins"
-msgstr "啟用此選項來封鎖登入失敗次數過多的 IP 位址"
-
 msgid "Unban all IPs"
 msgstr "解除所有IP的封鎖"
 
-msgid "IP sets updated (fetch only, not merged)"
-msgstr "IP 集合已更新（僅抓檔，未合併重載）"
-
-msgid "Updated and merged successfully (incl. whitelist)"
-msgstr "已成功更新並合併（含白名單）"
-
-msgid "Settings saved (schedule synced)"
-msgstr "設定已儲存（排程已同步）"
-
-msgid "Select countries + whitelist IPs into merged IP set files. This page only builds IP sets; apply them yourself under Firewall - Port Forwards by picking the set in a rule."
-msgstr "勾選國家＋白名單 IP，合併成IPs集合檔。本頁只生產 IPs 集合，請自行到 防火牆 - 連接埠轉發，選取規則-使用 IPs 集合"
-
-msgid "Latest merged IP set file: /etc/luci-uploads/%s.cidr (%s lines / live %s entries / updated %s)"
-msgstr "目前最新合併的IPs集合檔：/etc/luci-uploads/%s.cidr（%s 行 / live %s 段 / 更新於 %s）"
-
-msgid "Latest merged IP set file: no data yet"
-msgstr "目前最新合併的IPs集合檔：尚無資料"
-
-msgid "Status script failed"
-msgstr "狀態腳本執行失敗"
-
-msgid "Status script failed: %s"
-msgstr "狀態腳本執行失敗：%s"
-
-msgid "e.g. 203.0.113.10, 203.0.113.0/24, 203.0.113.10-203.0.113.50"
-msgstr "例如 203.0.113.10、203.0.113.0/24、203.0.113.10-203.0.113.50"
-
-msgid "Latest merged IP set file: /etc/luci-uploads/%s.cidr (%s lines / live %s entries / updated %s, checked %s — no changes)"
-msgstr "目前最新合併的IPs集合檔：/etc/luci-uploads/%s.cidr（%s 行 / live %s 段 / 更新於 %s，%s 已檢查無變動）"
-
-msgid "Reload Log"
-msgstr "重新載入紀錄"
-
-msgid "Enable auto-update of feed sets"
-msgstr "啟用自動更新訂閱源集合"
-
+msgid "GeoGuard"
+msgstr "國門守衛 GeoGuard"

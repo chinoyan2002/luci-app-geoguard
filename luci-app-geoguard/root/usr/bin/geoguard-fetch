@@ -1,6 +1,6 @@
 #!/bin/sh
-# geoguard-fetch：只抓各國 CIDR 檔（不合併、不重載）
-# 用途：首次安裝補檔、單獨重新抓源。合併請跑 geoguard-update
+# geoguard-fetch: download per-country CIDR files only (no merge, no reload)
+# Purpose: backfill on first install, re-fetch sources standalone. Run geoguard-update to merge.
 BASE_DIR="/etc/luci-uploads"
 TEMP_DIR="/tmp/cafetch-$$"
 
@@ -48,6 +48,7 @@ OK=0; FAIL=""
 : > "$BASE_DIR/.fetch-results"
 for cc in $SELECTED; do
   [ -z "$cc" ] && continue
+  case "$cc" in [a-z][a-z]) ;; *) logger -t geoguard "bad country code, skip: $cc"; continue ;; esac
   if fetch_one "$cc"; then OK=$((OK+1)); else FAIL="$FAIL $cc"; fi
 done
 logger -t geoguard "IP set fetch done: OK $OK countries, FAILED:$FAIL"

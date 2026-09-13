@@ -103,7 +103,7 @@ def main():
                f'Version: {ver}-{rel}\n'
                'Architecture: all\n'
                'Maintainer: chinoyan\n'
-               'Depends: firewall4, wget-ssl, uhttpd\n'
+                'Depends: luci-base, firewall4, wget-ssl, jsonfilter\n'
                f'Source: https://github.com/chinoyan2002/{APP}\n'
                'Description: GeoGuard - country allow-list IPS with whitelist, '
                'DDNS allowlist and login guard for firewall4 (LuCI, zh-TW/en)\n')

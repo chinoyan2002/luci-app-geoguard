@@ -1,6 +1,7 @@
 #!/bin/sh
-# geoguard-update v7：抓取 → 合併 → 同步多個 uci ipset 區段（含英文註解）→ 刷新 live set
-# 集合：各國（有檔才建）＋合併＋白名單（空白不建不留檔）；白名單預設名 CustomAllow
+# geoguard-update: fetch -> merge -> sync uci ipset sections -> refresh live sets
+# Sets: per-country (built only when the file exists) + merged + whitelist
+# (skipped when empty, no file kept); default whitelist name CustomAllow
 BASE_DIR="/etc/luci-uploads"
 TEMP_DIR="/tmp/geoguard-$$"
 CCEN="$BASE_DIR/cc-en.txt"
@@ -50,7 +51,7 @@ cc_en() {
 
 /usr/bin/geoguard-fetch
 
-# 逐國結果寫入歷史
+# Append per-country fetch results to history
 if [ -f "$BASE_DIR/.fetch-results" ]; then
   while IFS= read -r line; do
     [ -z "$line" ] && continue
@@ -59,7 +60,7 @@ if [ -f "$BASE_DIR/.fetch-results" ]; then
   rm -f "$BASE_DIR/.fetch-results"
 fi
 
-# 範圍 A-B 展開成最小 CIDR 組（awk，無外部依賴）
+# Expand A-B ranges into minimal CIDR groups (awk, no external deps)
 range2cidr() {
   awk '
   function ip2int(ip,   a) { split(ip, a, "[.]"); return (a[1]*16777216)+(a[2]*65536)+(a[3]*256)+a[4]; }
@@ -82,7 +83,7 @@ range2cidr() {
   }'
 }
 
-# 白名單正規化（單IP補/32、CIDR、範圍展開），結果進 $1 指定的檔
+# Normalize whitelist (bare IP gets /32, CIDR kept, ranges expanded) into $1
 build_white() {
   > "$1"
   for ip in $WHITELIST; do
@@ -106,6 +107,7 @@ TEMP_ALLOW="$TEMP_DIR/merged.tmp"
 > "$TEMP_ALLOW"
 for cc in $SELECTED; do
   [ -z "$cc" ] && continue
+  case "$cc" in [a-z][a-z]) ;; *) logger -t geoguard "bad country code, skip: $cc"; continue ;; esac
   [ -f "$BASE_DIR/${cc}.cidr" ] && cat "$BASE_DIR/${cc}.cidr" >> "$TEMP_ALLOW"
 done
 build_white "$TEMP_DIR/white.tmp"
@@ -116,10 +118,11 @@ sort -u "$TEMP_ALLOW" > "$TEMP_DIR/merged.sorted"
   grep -E '^[0-9]{1,3}(\.[0-9]{1,3}){3}/([1-9]|[12][0-9]|3[0-2])$' "$TEMP_DIR/merged.sorted" > "$TEMP_DIR/merged.clean"
 [ -s "$TEMP_DIR/merged.clean" ] || { logger -t geoguard "merged empty, skip"; exit 1; }
 
-# 期望集合：格式 name|file|comment
+# Desired sets: name|file|comment format
 DESIRED=""
 for cc in $SELECTED; do
   [ -z "$cc" ] && continue
+  case "$cc" in [a-z][a-z]) ;; *) logger -t geoguard "bad country code, skip: $cc"; continue ;; esac
   if [ -s "$BASE_DIR/${cc}.cidr" ]; then
     DESIRED="$DESIRED ${cc}:$BASE_DIR/${cc}.cidr"
   else
@@ -261,8 +264,8 @@ for item in $DESIRED; do
   [ -s "$fl" ] || continue
   if nft list set inet fw4 "$nm" >/dev/null 2>&1; then
     nft flush set inet fw4 "$nm"
-    nft add element inet fw4 "$nm" "{ $(tr '\n' ',' < "$fl" | sed 's/,$//') }" 2>/dev/null \
-      || logger -t geoguard "live refresh failed: $nm"
+    { printf 'add element inet fw4 %s { ' "$nm"; tr '\n' ',' < "$fl" | sed 's/,$//'; printf ' }\n'; } \
+      | nft -f - 2>/dev/null || logger -t geoguard "live refresh failed: $nm"
   fi
 done
 logger -t geoguard "done $SETNAME +$WHITENAME"

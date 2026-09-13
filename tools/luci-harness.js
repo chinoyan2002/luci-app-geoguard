@@ -190,8 +190,13 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
   console.log('rows total=' + rows.length + ' visible-after-TW-search=' + visible.length);
   if (rows.length < 200) { console.error('HARNESS-FAIL: 國家列太少'); process.exit(1); }
   if (visible.length !== 1 || visible[0].textContent.indexOf('TW') < 0 ||
-      visible[0].textContent.indexOf('台灣/TAIWAN') < 0) {
+      visible[0].textContent.indexOf('TAIWAN') < 0) {
     console.error('HARNESS-FAIL: 搜尋 TW 結果錯誤: ' + (visible[0] || {}).textContent);
+    process.exit(1);
+  }
+  // EN-source: location cell must carry no CJK literal (translated via .po at runtime)
+  if (/[\u4e00-\u9fff]/.test(visible[0].textContent)) {
+    console.error('HARNESS-FAIL: 地名欄殘留中文原字: ' + visible[0].textContent);
     process.exit(1);
   }
   // A1/A2 不可存在

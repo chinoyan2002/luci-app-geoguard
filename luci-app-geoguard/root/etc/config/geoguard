@@ -9,7 +9,7 @@ config geoguard 'main'
 	option update_hour '6'
 	option update_min '0'
 	option white_name 'CustomAllow'
-	# list company_ddns：DDNS 白名單清單（UI 新增，空＝停用；發行版不預填）
+	# list ddns_allowlist: DDNS whitelist (added via UI, empty = disabled; shipped empty)
 	option ban_interval '60'
 	option ddns_interval '30'
 	list ban_exempt '192.168.0.0/16'

@@ -1,7 +1,8 @@
 #!/bin/sh
-# geoguard-ban: LuCI + SSH 登入防爆破（參數全讀 UCI，無寫死）
-# 免封三層：① ban_exempt 清單（UI 可改，預含保留段）② 白名單檔 ③ ddns state
-# 由 /etc/init.d/geoguard-ban（procd，間隔讀 ban_interval）呼叫
+# geoguard-ban: LuCI + SSH login brute-force guard (all params from UCI, nothing hardcoded)
+# Exemption layers: (1) ban_exempt list (UI-editable, reserved ranges by default)
+# (2) whitelist file (3) ddns state
+# Called by /etc/init.d/geoguard-ban (procd, interval read from ban_interval)
 SET=geoguard_ban
 CFG=geoguard
 PERSIST="/etc/luci-uploads/ban-persist.list"
@@ -13,7 +14,8 @@ num() { case "$1" in ''|*[!0-9]*) echo "$2" ;; *) echo "$1" ;; esac; }
 EN=$(g ban_enabled); [ -z "$EN" ] && EN=1
 [ "$EN" = "0" ] && exit 0
 
-# guard 自癒：wan 介面漂移（任何存檔路徑漏了重產都自動修，每 60 秒對一次）
+# Guard self-heal: WAN interface drift (any save path that misses regen is
+# repaired automatically, checked every 60 seconds)
 GWANT=$(g ban_wan_if)
 if [ -z "$GWANT" ]; then
   for zi in $(uci show firewall 2>/dev/null | grep -oE '@zone\[[0-9]+\]=zone' | grep -oE '[0-9]+'); do
@@ -36,9 +38,9 @@ WEB=$(g ban_web); [ -z "$WEB" ] && WEB=1
 SSHO=$(g ban_ssh); [ -z "$SSHO" ] && SSHO=1
 WHITE=$(g white_name); [ -z "$WHITE" ] && WHITE=CustomAllow
 WLFILE="/etc/luci-uploads/$WHITE.cidr"
-STATE="/etc/luci-uploads/company-ddns.list"
+STATE="/etc/luci-uploads/ddns-allowlist.list"
 
-# CIDR 成員判斷（awk，stdin 逐行：CIDR 或裸 IP）
+# CIDR membership test (awk, stdin line by line: CIDR or bare IP)
 in_list() {
   # $1=ip, stdin=list
   awk -v ip="$1" '
@@ -64,7 +66,7 @@ in_ddns() {
   awk -v ip="$1" '$2 == ip { found = 1; exit; } END { exit (found ? 0 : 1); }' "$STATE"
 }
 
-# N 分鐘時間窗
+# N-minute sliding window
 WIN=/tmp/geoguard-ban-window
 : > "$WIN"
 i=0

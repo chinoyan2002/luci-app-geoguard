@@ -5,99 +5,99 @@
 'require ui';
 'require uci';
 
-var VERSION = '2.1.9';
+var VERSION = '2.2.0';
 var fmt = function(s) {
 	var args = Array.prototype.slice.call(arguments, 1);
 	var i = 0;
 	return String(s).replace(/%s/g, function() { return (i < args.length) ? args[i++] : ''; });
 };
 var CONTINENTS = [
-	['asia', '亞洲', [
-		['af', '阿富汗', 'AFGHANISTAN'], ['am', '亞美尼亞', 'ARMENIA'], ['az', '亞塞拜然', 'AZERBAIJAN'],
-		['bd', '孟加拉', 'BANGLADESH'], ['bh', '巴林', 'BAHRAIN'], ['bn', '汶萊', 'BRUNEI'],
-		['bt', '不丹', 'BHUTAN'], ['cn', '中國', 'CHINA'], ['cy', '塞普勒斯', 'CYPRUS'],
-		['ge', '喬治亞', 'GEORGIA'], ['hk', '香港', 'HONG KONG'], ['id', '印尼', 'INDONESIA'],
-		['il', '以色列', 'ISRAEL'], ['in', '印度', 'INDIA'], ['iq', '伊拉克', 'IRAQ'],
-		['ir', '伊朗', 'IRAN'], ['jo', '約旦', 'JORDAN'], ['jp', '日本', 'JAPAN'],
-		['kg', '吉爾吉斯', 'KYRGYZSTAN'], ['kh', '柬埔寨', 'CAMBODIA'], ['kp', '北韓', 'NORTH KOREA'],
-		['kr', '南韓', 'SOUTH KOREA'], ['kw', '科威特', 'KUWAIT'], ['kz', '哈薩克', 'KAZAKHSTAN'],
-		['la', '寮國', 'LAOS'], ['lb', '黎巴嫩', 'LEBANON'], ['lk', '斯里蘭卡', 'SRI LANKA'],
-		['mm', '緬甸', 'MYANMAR'], ['mn', '蒙古', 'MONGOLIA'], ['mo', '澳門', 'MACAO'],
-		['my', '馬來西亞', 'MALAYSIA'], ['np', '尼泊爾', 'NEPAL'], ['om', '阿曼', 'OMAN'],
-		['ph', '菲律賓', 'PHILIPPINES'], ['pk', '巴基斯坦', 'PAKISTAN'], ['ps', '巴勒斯坦', 'PALESTINE'],
-		['qa', '卡達', 'QATAR'], ['sa', '沙烏地阿拉伯', 'SAUDI ARABIA'], ['sg', '新加坡', 'SINGAPORE'],
-		['sy', '敘利亞', 'SYRIA'], ['th', '泰國', 'THAILAND'], ['tj', '塔吉克', 'TAJIKISTAN'],
-		['tl', '東帝汶', 'TIMOR-LESTE'], ['tm', '土庫曼', 'TURKMENISTAN'], ['tr', '土耳其', 'TURKEY'],
-		['tw', '台灣', 'TAIWAN'], ['uz', '烏茲別克', 'UZBEKISTAN'], ['vn', '越南', 'VIETNAM'],
-		['ye', '葉門', 'YEMEN']
+	['asia', [
+		['af', _('AFGHANISTAN')], ['am', _('ARMENIA')], ['az', _('AZERBAIJAN')],
+		['bd', _('BANGLADESH')], ['bh', _('BAHRAIN')], ['bn', _('BRUNEI')],
+		['bt', _('BHUTAN')], ['cn', _('CHINA')], ['cy', _('CYPRUS')],
+		['ge', _('GEORGIA')], ['hk', _('HONG KONG')], ['id', _('INDONESIA')],
+		['il', _('ISRAEL')], ['in', _('INDIA')], ['iq', _('IRAQ')],
+		['ir', _('IRAN')], ['jo', _('JORDAN')], ['jp', _('JAPAN')],
+		['kg', _('KYRGYZSTAN')], ['kh', _('CAMBODIA')], ['kp', _('NORTH KOREA')],
+		['kr', _('SOUTH KOREA')], ['kw', _('KUWAIT')], ['kz', _('KAZAKHSTAN')],
+		['la', _('LAOS')], ['lb', _('LEBANON')], ['lk', _('SRI LANKA')],
+		['mm', _('MYANMAR')], ['mn', _('MONGOLIA')], ['mo', _('MACAO')],
+		['my', _('MALAYSIA')], ['np', _('NEPAL')], ['om', _('OMAN')],
+		['ph', _('PHILIPPINES')], ['pk', _('PAKISTAN')], ['ps', _('PALESTINE')],
+		['qa', _('QATAR')], ['sa', _('SAUDI ARABIA')], ['sg', _('SINGAPORE')],
+		['sy', _('SYRIA')], ['th', _('THAILAND')], ['tj', _('TAJIKISTAN')],
+		['tl', _('TIMOR-LESTE')], ['tm', _('TURKMENISTAN')], ['tr', _('TURKEY')],
+		['tw', _('TAIWAN')], ['uz', _('UZBEKISTAN')], ['vn', _('VIETNAM')],
+		['ye', _('YEMEN')]
 	]],
-	['europe', '歐洲', [
-		['ad', '安道爾', 'ANDORRA'], ['al', '阿爾巴尼亞', 'ALBANIA'], ['at', '奧地利', 'AUSTRIA'],
-		['ax', '奧蘭群島', 'ALAND ISLANDS'], ['ba', '波士尼亞', 'BOSNIA AND HERZEGOVINA'], ['be', '比利時', 'BELGIUM'],
-		['bg', '保加利亞', 'BULGARIA'], ['by', '白俄羅斯', 'BELARUS'], ['ch', '瑞士', 'SWITZERLAND'],
-		['cz', '捷克', 'CZECHIA'], ['de', '德國', 'GERMANY'], ['dk', '丹麥', 'DENMARK'],
-		['ee', '愛沙尼亞', 'ESTONIA'], ['es', '西班牙', 'SPAIN'], ['fi', '芬蘭', 'FINLAND'],
-		['fo', '法羅群島', 'FAROE ISLANDS'], ['fr', '法國', 'FRANCE'], ['gb', '英國', 'UNITED KINGDOM'],
-		['gg', '根西島', 'GUERNSEY'], ['gi', '直布羅陀', 'GIBRALTAR'], ['gr', '希臘', 'GREECE'],
-		['hr', '克羅埃西亞', 'CROATIA'], ['hu', '匈牙利', 'HUNGARY'], ['ie', '愛爾蘭', 'IRELAND'],
-		['im', '曼島', 'ISLE OF MAN'], ['is', '冰島', 'ICELAND'], ['it', '義大利', 'ITALY'],
-		['je', '澤西島', 'JERSEY'], ['li', '列支敦斯登', 'LIECHTENSTEIN'], ['lt', '立陶宛', 'LITHUANIA'],
-		['lu', '盧森堡', 'LUXEMBOURG'], ['lv', '拉脫維亞', 'LATVIA'], ['mc', '摩納哥', 'MONACO'],
-		['md', '摩爾多瓦', 'MOLDOVA'], ['me', '蒙特內哥羅', 'MONTENEGRO'], ['mk', '北馬其頓', 'NORTH MACEDONIA'],
-		['mt', '馬爾他', 'MALTA'], ['nl', '荷蘭', 'NETHERLANDS'], ['no', '挪威', 'NORWAY'],
-		['pl', '波蘭', 'POLAND'], ['pt', '葡萄牙', 'PORTUGAL'], ['ro', '羅馬尼亞', 'ROMANIA'],
-		['rs', '塞爾維亞', 'SERBIA'], ['ru', '俄羅斯', 'RUSSIA'], ['se', '瑞典', 'SWEDEN'],
-		['si', '斯洛維尼亞', 'SLOVENIA'], ['sk', '斯洛伐克', 'SLOVAKIA'], ['sm', '聖馬利諾', 'SAN MARINO'],
-		['ua', '烏克蘭', 'UKRAINE'], ['va', '梵蒂岡', 'VATICAN CITY']
+	['europe', [
+		['ad', _('ANDORRA')], ['al', _('ALBANIA')], ['at', _('AUSTRIA')],
+		['ax', _('ALAND ISLANDS')], ['ba', _('BOSNIA AND HERZEGOVINA')], ['be', _('BELGIUM')],
+		['bg', _('BULGARIA')], ['by', _('BELARUS')], ['ch', _('SWITZERLAND')],
+		['cz', _('CZECHIA')], ['de', _('GERMANY')], ['dk', _('DENMARK')],
+		['ee', _('ESTONIA')], ['es', _('SPAIN')], ['fi', _('FINLAND')],
+		['fo', _('FAROE ISLANDS')], ['fr', _('FRANCE')], ['gb', _('UNITED KINGDOM')],
+		['gg', _('GUERNSEY')], ['gi', _('GIBRALTAR')], ['gr', _('GREECE')],
+		['hr', _('CROATIA')], ['hu', _('HUNGARY')], ['ie', _('IRELAND')],
+		['im', _('ISLE OF MAN')], ['is', _('ICELAND')], ['it', _('ITALY')],
+		['je', _('JERSEY')], ['li', _('LIECHTENSTEIN')], ['lt', _('LITHUANIA')],
+		['lu', _('LUXEMBOURG')], ['lv', _('LATVIA')], ['mc', _('MONACO')],
+		['md', _('MOLDOVA')], ['me', _('MONTENEGRO')], ['mk', _('NORTH MACEDONIA')],
+		['mt', _('MALTA')], ['nl', _('NETHERLANDS')], ['no', _('NORWAY')],
+		['pl', _('POLAND')], ['pt', _('PORTUGAL')], ['ro', _('ROMANIA')],
+		['rs', _('SERBIA')], ['ru', _('RUSSIA')], ['se', _('SWEDEN')],
+		['si', _('SLOVENIA')], ['sk', _('SLOVAKIA')], ['sm', _('SAN MARINO')],
+		['ua', _('UKRAINE')], ['va', _('VATICAN CITY')]
 	]],
-	['africa', '非洲', [
-		['dz', '阿爾及利亞', 'ALGERIA'], ['ao', '安哥拉', 'ANGOLA'], ['bj', '貝南', 'BENIN'],
-		['bw', '波札那', 'BOTSWANA'], ['bf', '布吉納法索', 'BURKINA FASO'], ['bi', '蒲隆地', 'BURUNDI'],
-		['cm', '喀麥隆', 'CAMEROON'], ['cv', '維德角', 'CABO VERDE'], ['cf', '中非', 'CENTRAL AFRICAN REPUBLIC'],
-		['td', '查德', 'CHAD'], ['km', '葛摩', 'COMOROS'], ['cg', '剛果', 'CONGO'],
-		['cd', '剛果民主', 'DEMOCRATIC REPUBLIC OF THE CONGO'], ['dj', '吉布地', 'DJIBOUTI'], ['eg', '埃及', 'EGYPT'],
-		['gq', '赤道幾內亞', 'EQUATORIAL GUINEA'], ['er', '厄利垂亞', 'ERITREA'], ['et', '衣索比亞', 'ETHIOPIA'],
-		['ga', '加彭', 'GABON'], ['gm', '甘比亞', 'GAMBIA'], ['gh', '迦納', 'GHANA'],
-		['gn', '幾內亞', 'GUINEA'], ['gw', '幾內亞比索', 'GUINEA-BISSAU'], ['ke', '肯亞', 'KENYA'],
-		['lr', '賴比瑞亞', 'LIBERIA'], ['ls', '賴索托', 'LESOTHO'], ['ly', '利比亞', 'LIBYA'],
-		['ma', '摩洛哥', 'MOROCCO'], ['mg', '馬達加斯加', 'MADAGASCAR'], ['ml', '馬利', 'MALI'],
-		['mr', '茅利塔尼亞', 'MAURITANIA'], ['mu', '模里西斯', 'MAURITIUS'], ['mw', '馬拉威', 'MALAWI'],
-		['mz', '莫三比克', 'MOZAMBIQUE'], ['na', '納米比亞', 'NAMIBIA'], ['ne', '尼日', 'NIGER'],
-		['ng', '奈及利亞', 'NIGERIA'], ['rw', '盧安達', 'RWANDA'], ['sc', '塞席爾', 'SEYCHELLES'],
-		['sd', '蘇丹', 'SUDAN'], ['sh', '聖赫勒拿島', 'SAINT HELENA'], ['sl', '獅子山', 'SIERRA LEONE'],
-		['sn', '塞內加爾', 'SENEGAL'], ['so', '索馬利亞', 'SOMALIA'], ['ss', '南蘇丹', 'SOUTH SUDAN'],
-		['st', '聖多美普林西比', 'SAO TOME AND PRINCIPE'], ['sz', '史瓦帝尼', 'ESWATINI'], ['tg', '多哥', 'TOGO'],
-		['tn', '突尼西亞', 'TUNISIA'], ['tz', '坦尚尼亞', 'TANZANIA'], ['ug', '烏干達', 'UGANDA'],
-		['za', '南非', 'SOUTH AFRICA'], ['zm', '尚比亞', 'ZAMBIA'], ['zw', '辛巴威', 'ZIMBABWE']
+	['africa', [
+		['dz', _('ALGERIA')], ['ao', _('ANGOLA')], ['bj', _('BENIN')],
+		['bw', _('BOTSWANA')], ['bf', _('BURKINA FASO')], ['bi', _('BURUNDI')],
+		['cm', _('CAMEROON')], ['cv', _('CABO VERDE')], ['cf', _('CENTRAL AFRICAN REPUBLIC')],
+		['td', _('CHAD')], ['km', _('COMOROS')], ['cg', _('CONGO')],
+		['cd', _('DEMOCRATIC REPUBLIC OF THE CONGO')], ['dj', _('DJIBOUTI')], ['eg', _('EGYPT')],
+		['gq', _('EQUATORIAL GUINEA')], ['er', _('ERITREA')], ['et', _('ETHIOPIA')],
+		['ga', _('GABON')], ['gm', _('GAMBIA')], ['gh', _('GHANA')],
+		['gn', _('GUINEA')], ['gw', _('GUINEA-BISSAU')], ['ke', _('KENYA')],
+		['lr', _('LIBERIA')], ['ls', _('LESOTHO')], ['ly', _('LIBYA')],
+		['ma', _('MOROCCO')], ['mg', _('MADAGASCAR')], ['ml', _('MALI')],
+		['mr', _('MAURITANIA')], ['mu', _('MAURITIUS')], ['mw', _('MALAWI')],
+		['mz', _('MOZAMBIQUE')], ['na', _('NAMIBIA')], ['ne', _('NIGER')],
+		['ng', _('NIGERIA')], ['rw', _('RWANDA')], ['sc', _('SEYCHELLES')],
+		['sd', _('SUDAN')], ['sh', _('SAINT HELENA')], ['sl', _('SIERRA LEONE')],
+		['sn', _('SENEGAL')], ['so', _('SOMALIA')], ['ss', _('SOUTH SUDAN')],
+		['st', _('SAO TOME AND PRINCIPE')], ['sz', _('ESWATINI')], ['tg', _('TOGO')],
+		['tn', _('TUNISIA')], ['tz', _('TANZANIA')], ['ug', _('UGANDA')],
+		['za', _('SOUTH AFRICA')], ['zm', _('ZAMBIA')], ['zw', _('ZIMBABWE')]
 	]],
-	['northamerica', '北美洲', [
-		['ag', '安地卡及巴布達', 'ANTIGUA AND BARBUDA'], ['ai', '安圭拉', 'ANGUILLA'], ['bs', '巴哈馬', 'BAHAMAS'],
-		['bb', '巴貝多', 'BARBADOS'], ['bz', '貝里斯', 'BELIZE'], ['bm', '百慕達', 'BERMUDA'],
-		['ca', '加拿大', 'CANADA'], ['cr', '哥斯大黎加', 'COSTA RICA'], ['cu', '古巴', 'CUBA'],
-		['dm', '多米尼克', 'DOMINICA'], ['do', '多明尼加', 'DOMINICAN REPUBLIC'], ['sv', '薩爾瓦多', 'EL SALVADOR'],
-		['gd', '格瑞那達', 'GRENADA'], ['gl', '格陵蘭', 'GREENLAND'], ['gt', '瓜地馬拉', 'GUATEMALA'],
-		['ht', '海地', 'HAITI'], ['hn', '宏都拉斯', 'HONDURAS'], ['jm', '牙買加', 'JAMAICA'],
-		['ky', '開曼群島', 'CAYMAN ISLANDS'], ['mx', '墨西哥', 'MEXICO'], ['ms', '蒙哲臘', 'MONTSERRAT'],
-		['ni', '尼加拉瓜', 'NICARAGUA'], ['pa', '巴拿馬', 'PANAMA'], ['pm', '聖皮耶密克隆', 'SAINT PIERRE AND MIQUELON'],
-		['pr', '波多黎各', 'PUERTO RICO'], ['tt', '千里達及托巴哥', 'TRINIDAD AND TOBAGO'], ['us', '美國', 'UNITED STATES'],
-		['vg', '英屬維京群島', 'VIRGIN ISLANDS (BRITISH)'], ['vi', '美屬維京群島', 'VIRGIN ISLANDS (US)']
+	['northamerica', [
+		['ag', _('ANTIGUA AND BARBUDA')], ['ai', _('ANGUILLA')], ['bs', _('BAHAMAS')],
+		['bb', _('BARBADOS')], ['bz', _('BELIZE')], ['bm', _('BERMUDA')],
+		['ca', _('CANADA')], ['cr', _('COSTA RICA')], ['cu', _('CUBA')],
+		['dm', _('DOMINICA')], ['do', _('DOMINICAN REPUBLIC')], ['sv', _('EL SALVADOR')],
+		['gd', _('GRENADA')], ['gl', _('GREENLAND')], ['gt', _('GUATEMALA')],
+		['ht', _('HAITI')], ['hn', _('HONDURAS')], ['jm', _('JAMAICA')],
+		['ky', _('CAYMAN ISLANDS')], ['mx', _('MEXICO')], ['ms', _('MONTSERRAT')],
+		['ni', _('NICARAGUA')], ['pa', _('PANAMA')], ['pm', _('SAINT PIERRE AND MIQUELON')],
+		['pr', _('PUERTO RICO')], ['tt', _('TRINIDAD AND TOBAGO')], ['us', _('UNITED STATES')],
+		['vg', _('VIRGIN ISLANDS (BRITISH)')], ['vi', _('VIRGIN ISLANDS (US)')]
 	]],
-	['southamerica', '南美洲', [
-		['ar', '阿根廷', 'ARGENTINA'], ['bo', '玻利維亞', 'BOLIVIA'], ['br', '巴西', 'BRAZIL'],
-		['cl', '智利', 'CHILE'], ['co', '哥倫比亞', 'COLOMBIA'], ['ec', '厄瓜多', 'ECUADOR'],
-		['fk', '福克蘭群島', 'FALKLAND ISLANDS'], ['gy', '蓋亞那', 'GUYANA'], ['py', '巴拉圭', 'PARAGUAY'],
-		['pe', '秘魯', 'PERU'], ['sr', '蘇利南', 'SURINAME'], ['uy', '烏拉圭', 'URUGUAY'],
-		['ve', '委內瑞拉', 'VENEZUELA']
+	['southamerica', [
+		['ar', _('ARGENTINA')], ['bo', _('BOLIVIA')], ['br', _('BRAZIL')],
+		['cl', _('CHILE')], ['co', _('COLOMBIA')], ['ec', _('ECUADOR')],
+		['fk', _('FALKLAND ISLANDS')], ['gy', _('GUYANA')], ['py', _('PARAGUAY')],
+		['pe', _('PERU')], ['sr', _('SURINAME')], ['uy', _('URUGUAY')],
+		['ve', _('VENEZUELA')]
 	]],
-	['oceania', '大洋洲', [
-		['as', '美屬薩摩亞', 'AMERICAN SAMOA'], ['au', '澳洲', 'AUSTRALIA'], ['ck', '庫克群島', 'COOK ISLANDS'],
-		['fj', '斐濟', 'FIJI'], ['fm', '密克羅尼西亞', 'MICRONESIA'], ['gu', '關島', 'GUAM'],
-		['ki', '吉里巴斯', 'KIRIBATI'], ['mh', '馬紹爾群島', 'MARSHALL ISLANDS'], ['nc', '新喀里多尼亞', 'NEW CALEDONIA'],
-		['nr', '諾魯', 'NAURU'], ['nu', '紐埃', 'NIUE'], ['nz', '紐西蘭', 'NEW ZEALAND'],
-		['pf', '法屬玻里尼西亞', 'FRENCH POLYNESIA'], ['pg', '巴布亞紐幾內亞', 'PAPUA NEW GUINEA'], ['pw', '帛琉', 'PALAU'],
-		['sb', '索羅門群島', 'SOLOMON ISLANDS'], ['tk', '托克勞', 'TOKELAU'], ['to', '東加', 'TONGA'],
-		['tv', '吐瓦魯', 'TUVALU'], ['vu', '萬那杜', 'VANUATU'], ['wf', '瓦利斯和富圖納', 'WALLIS AND FUTUNA'],
-		['ws', '薩摩亞', 'SAMOA']
+	['oceania', [
+		['as', _('AMERICAN SAMOA')], ['au', _('AUSTRALIA')], ['ck', _('COOK ISLANDS')],
+		['fj', _('FIJI')], ['fm', _('MICRONESIA')], ['gu', _('GUAM')],
+		['ki', _('KIRIBATI')], ['mh', _('MARSHALL ISLANDS')], ['nc', _('NEW CALEDONIA')],
+		['nr', _('NAURU')], ['nu', _('NIUE')], ['nz', _('NEW ZEALAND')],
+		['pf', _('FRENCH POLYNESIA')], ['pg', _('PAPUA NEW GUINEA')], ['pw', _('PALAU')],
+		['sb', _('SOLOMON ISLANDS')], ['tk', _('TOKELAU')], ['to', _('TONGA')],
+		['tv', _('TUVALU')], ['vu', _('VANUATU')], ['wf', _('WALLIS AND FUTUNA')],
+		['ws', _('SAMOA')]
 	]]
 ];
 
@@ -265,7 +265,7 @@ return view.extend({
 				selLine.appendChild(E('span', {}, [' ' + (arr.length > 0 ? arr.join(',').toUpperCase() : _('(none selected)'))]));
 			};
 			for (i = 0; i < CONTINENTS.length; i++) {
-				for (j = 0; j < CONTINENTS[i][2].length; j++) {
+				for (j = 0; j < CONTINENTS[i][1].length; j++) {
 					(function(cc) {
 						var cb = E('input', { 'type': 'checkbox', 'value': cc[0] });
 						if (countryState[cc[0]])
@@ -281,11 +281,11 @@ return view.extend({
 						var tr = E('tr', {}, [
 							E('td', {}, [cb]),
 							E('td', {}, [cc[0].toUpperCase()]),
-							E('td', {}, [cc[1] + '/' + cc[2]])
+							E('td', {}, [cc[1]])
 						]);
-						rows.push({ cc: cc[0], text: (cc[0] + ' ' + cc[1] + ' ' + cc[2]).toUpperCase(), el: tr, cb: cb });
+						rows.push({ cc: cc[0], text: (cc[0] + ' ' + cc[1]).toUpperCase(), el: tr, cb: cb });
 						tbody.appendChild(tr);
-					})(CONTINENTS[i][2][j]);
+					})(CONTINENTS[i][1][j]);
 				}
 			}
 			rows.sort(function(a, b) { return a.cc < b.cc ? -1 : (a.cc > b.cc ? 1 : 0); });

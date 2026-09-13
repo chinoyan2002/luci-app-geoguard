@@ -1,12 +1,14 @@
 #!/bin/sh
-# geoguard-ban-guard: 依 UCI 產生全擋 guard（被封＝整台對他消失）
-# wan 介面：ban_wan_if 有填用填的，空值自動偵測（firewall wan 區→ubus→預設路由）
-# 檔名固定 /etc/nftables.d/10-geoguard-guard.nft；有變才 fw4 reload
+# geoguard-ban-guard: generate the full-block guard from UCI
+# (banned = the box disappears for them)
+# WAN interface: use ban_wan_if when set, auto-detect when empty
+# (firewall wan zone -> ubus -> default route)
+# Fixed output /etc/nftables.d/10-geoguard-guard.nft; fw4 reload only on change
 OUT=/etc/nftables.d/10-geoguard-guard.nft
 
 WANIF=$(uci -q get geoguard.main.ban_wan_if 2>/dev/null)
 if [ -z "$WANIF" ]; then
-  # 自動偵測：逐個走訪 firewall zone（不用 grep 上下文，會黏到隔壁區）
+  # Auto-detect: walk firewall zones one by one (no grep context, it bleeds into neighbor zones)
   for zi in $(uci show firewall 2>/dev/null | grep -oE '@zone\[[0-9]+\]=zone' | grep -oE '[0-9]+'); do
     if [ "$(uci -q get firewall.@zone[$zi].name 2>/dev/null)" = "wan" ]; then
       ZNET=$(uci -q get firewall.@zone[$zi].network 2>/dev/null | awk '{print $1}')

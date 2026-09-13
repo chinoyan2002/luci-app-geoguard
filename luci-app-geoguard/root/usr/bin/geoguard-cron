@@ -1,5 +1,6 @@
 #!/bin/sh
-# geoguard 排程管理：每天／每週日／每月1日＋時分（改 UCI 後跑一次即生效）
+# geoguard schedule manager: daily / weekly (Sun) / monthly (1st) + hour:min
+# (takes effect after one run on UCI change)
 CRON_FILE="/etc/crontabs/root"
 JOB="/usr/bin/geoguard-update"
 
@@ -7,9 +8,11 @@ sed -i '\#geoguard-update#d' "$CRON_FILE" 2>/dev/null
 sed -i '\#geoguard-ddns#d' "$CRON_FILE" 2>/dev/null
 
 BASE_DIR="/etc/luci-uploads"
-# cron 行尾註解跟 LuCI 系統語言走。
-# 警告：NOTE_* 四句在 geoguard-ddns 內有完全相同的副本，兩邊必須一字不差，
-# 否則 ddns 自癒整行比對永遠失配→每輪刪寫重載 cron。
+# Cron trailing comments follow the LuCI system language.
+# WARNING: the four NOTE_* lines have identical copies in geoguard-ddns;
+# both sides must match byte-for-byte, otherwise the ddns self-heal line
+# comparison never matches and rewrites+reloads cron every round.
+# (NOTE_*_ZH values are locale data picked by gg_cron_lang, not code comments.)
 NOTE_DDNS_ZH='# 國門守衛 DDNS 白名單追蹤（自動管理，請勿手改）'
 NOTE_DDNS_EN='# GeoGuard DDNS whitelist tracker (auto-managed, do not edit)'
 NOTE_UPDATE_ZH='# 國門守衛 IP 集合更新（自動管理，請勿手改）'
@@ -20,8 +23,10 @@ gg_cron_lang() {
     *) echo 'en' ;;
   esac
 }
-# DDNS 白名單：靜態行常駐（任何存檔路徑都刪不掉它；無清單時腳本秒退）。
-# 間隔讀 UCI（預設 3 分）；清單空但 state 有貨＝剛被清空→跑一次 purge。
+# DDNS whitelist: static line always present (no save path removes it;
+# script exits fast when the list is empty).
+# Interval read from UCI (default 30 min); list empty but state non-empty
+# means just cleared -> run one purge.
 DDNS_I=$(uci -q get geoguard.main.ddns_interval 2>/dev/null)
 case "$DDNS_I" in ''|*[!0-9]*) DDNS_I=30 ;; esac
 [ "$DDNS_I" -lt 1 ] && DDNS_I=1
