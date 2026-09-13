@@ -3,7 +3,8 @@
 # then remove them (a factory-flashed image runs them at first boot instead).
 for f in /etc/uci-defaults/40-luci-app-geoguard \
          /etc/uci-defaults/41-luci-app-geoguard-ban \
-         /etc/uci-defaults/42-luci-app-geoguard-migrate; do
+         /etc/uci-defaults/42-luci-app-geoguard-migrate \
+         /etc/uci-defaults/43-luci-app-geoguard-statedir; do
 	[ -f "$f" ] || continue
 	sh "$f"
 	rm -f "$f"

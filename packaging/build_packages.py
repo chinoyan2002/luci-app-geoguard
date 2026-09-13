@@ -77,6 +77,17 @@ def main():
         lmo_paths[lmo_name] = dst
         print(f"Built {lmo_name}: {len(data)} bytes ({count} entries)")
 
+    # 1b. Every shipped uci-defaults script must be wired into BOTH install
+    # paths (lesson: 43-statedir shipped but never ran). Fail the build loudly.
+    ud = os.path.join(APP_ROOT, 'etc', 'uci-defaults')
+    postinst = open(os.path.join(ROOT_DIR, 'packaging', 'ipk-postinst'), encoding='utf-8').read()
+    postinstall = open(os.path.join(ROOT_DIR, 'packaging', 'luci-app-geoguard.post-install'),
+                       encoding='utf-8').read()
+    for fn in sorted(os.listdir(ud)):
+        assert fn in postinst, f'{fn} missing from ipk-postinst'
+        assert fn in postinstall, f'{fn} missing from apk post-install'
+    print(f"uci-defaults wiring OK ({len(os.listdir(ud))} scripts)")
+
     # 2. Assemble staging tree
     stage_dir = os.path.join(temp_dir, 'pkgstage', f'{APP}_{ver}')
     shutil.rmtree(os.path.dirname(stage_dir), ignore_errors=True)
