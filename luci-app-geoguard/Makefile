@@ -9,7 +9,7 @@ PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=
 
 LUCI_TITLE:=GeoGuard
-LUCI_DESCRIPTION:=Country allow-list IPS builder with whitelist, DDNS allowlist and login guard for firewall4 (LuCI, zh-TW/en).
+LUCI_DESCRIPTION:=GeoGuard builds country allow-list ipsets for firewall4 from IP-geolocation feeds, with a custom whitelist, a DDNS no-ban list and a LuCI/SSH login guard.
 LUCI_DEPENDS:=+luci-base +firewall4 +wget-ssl +jsonfilter
 LUCI_PKGARCH:=all
 
