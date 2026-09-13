@@ -6,7 +6,11 @@ pkgdesc="GeoGuard - country allow-list IPS with login guard for firewall4 (LuCI)
 url="https://github.com/chinoyan2002/luci-app-geoguard"
 arch="noarch"
 license="MIT"
-depends="luci-base firewall4 wget-ssl jsonfilter"
+# NOTE: busybox must stay listed: abuild force-adds an unresolvable /bin/sh
+# dep to any package whose install script has a #!/bin/sh shebang, unless
+# busybox (or /bin/sh) is already in depends (abuild:1184). /bin/sh is
+# always present on OpenWrt via busybox.
+depends="busybox luci-base firewall4 wget-ssl jsonfilter"
 source="payload.tar.gz"
 options="!strip !check !tracedeps"
 install="luci-app-geoguard.post-install"

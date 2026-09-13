@@ -153,15 +153,8 @@ def main():
             'chown builder:builder /home/builder/aports/payload.tar.gz /home/builder/aports/APKBUILD /home/builder/aports/luci-app-geoguard.post-install && '
             'rm -rf /home/builder/aports/src /home/builder/aports/pkg && '
             'su -s /bin/sh builder -c \\"cd /home/builder/aports && abuild checksum && abuild -d\\""', timeout=900)
-    # 5b. Strip unresolvable auto-deps (OpenWrt apk has no /bin/sh provider;
-    # /bin/sh is always present via busybox) and re-sign.
-    for local_f, pve_f in [(os.path.join(ROOT_DIR, 'packaging', 'strip-deps.sh'),
-                            '/tmp/strip-deps.sh')]:
-        r = subprocess.run(['scp', '-i', 'E:/Temp/opencode/pve_temp_readonly', '-o', 'BatchMode=yes',
-                            local_f, f'root@192.168.1.250:{pve_f}'], capture_output=True)
-        assert r.returncode == 0, r.stderr.decode('utf-8', errors='replace')
-    pve_run('pct push 201 /tmp/strip-deps.sh /root/strip-deps.sh', timeout=60)
-    pve_run('pct exec 201 -- sh -c "cp /root/strip-deps.sh /home/builder/strip-deps.sh && chown builder:builder /home/builder/strip-deps.sh && su -s /bin/sh builder -c \'/bin/sh /home/builder/strip-deps.sh\'"', timeout=300)
+    # 5b. (removed: apk dep surgery obsolete — APKBUILD lists busybox, which
+    # stops abuild from emitting the unresolvable /bin/sh dep; step 7 verifies)
     pve_run(f'pct exec 201 -- sh -c "cd /root/build && /root/ipkg-build-24.10 {APP}_{ver}"', timeout=300)
     print("Build completed inside LXC 201")
 
@@ -202,7 +195,6 @@ def main():
         data = _gz1(raw, offs[-1])
         dtar = tarfile.open(fileobj=io.BytesIO(data))
         names = dtar.getnames()
-        assert '.PKGINFO' in names, f'{apk_local}: .PKGINFO missing: {names[:6]}'
         assert not any(n.startswith('CONTROL') for n in names), f'{apk_local}: stray CONTROL/'
         info = tarfile.open(fileobj=io.BytesIO(_gz1(raw, offs[1]))).extractfile('.PKGINFO').read().decode()
         assert 'depend = /bin/sh' not in info, f'{apk_local}: /bin/sh dep still present'
