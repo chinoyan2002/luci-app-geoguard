@@ -191,7 +191,7 @@ def main():
     for apk_local, want_post in ((f'{APP}_{ver}-r{rel}_all.apk', True),
                                  (f'luci-i18n-geoguard-zh-tw_{ver}-r{rel}_all.apk', False)):
         raw = open(os.path.join(out_dir, apk_local), 'rb').read()
-        offs = [i for i in range(len(raw)) if raw[i:i + 2] == b'\x1f\x8b']
+        offs = _gmembers(raw)
         assert len(offs) >= 2, f'{apk_local}: want 2+ gzip members, got {len(offs)}'
         signames = tarfile.open(fileobj=io.BytesIO(_gz1(raw, offs[0]))).getnames()
         assert any(n.startswith('.SIGN') for n in signames), f'{apk_local}: no .SIGN: {signames}'
@@ -212,6 +212,20 @@ def main():
         print(f"Verified apk structure: {apk_local} (control={ctlnames} data={len(names)} entries)")
 
     print(f"=== All artifacts saved in {out_dir} ===")
+
+
+def _gmembers(raw):
+    """Real gzip member offsets (immune to false-positive magic bytes)."""
+    import zlib
+    offs = []
+    off = 0
+    while raw[off:off + 2] == b'\x1f\x8b':
+        offs.append(off)
+        d = zlib.decompressobj(31)
+        d.decompress(raw[off:])
+        assert d.eof, 'truncated gzip member'
+        off = len(raw) - len(d.unused_data)
+    return offs
 
 
 def _gz1(raw, off):
