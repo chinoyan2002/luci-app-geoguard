@@ -10,6 +10,17 @@ HIST="$BASE_DIR/history.log"
 # One-time move from the pre-2.2.0 state filename
 [ -f "$BASE_DIR/company-ddns.list" ] && [ ! -f "$STATE" ] \
   && mv -f "$BASE_DIR/company-ddns.list" "$STATE" 2>/dev/null
+# One-time state move from the pre-2.2.1 shared dir (see geoguard-fetch)
+if [ -d /etc/luci-uploads ]; then
+  for _mf in /etc/luci-uploads/*.cidr /etc/luci-uploads/ban-persist.list \
+            /etc/luci-uploads/ddns-allowlist.list /etc/luci-uploads/history.log \
+            /etc/luci-uploads/cc-en.txt; do
+    [ -e "$_mf" ] || continue
+    [ -e "$BASE_DIR/${_mf##*/}" ] || mv -f "$_mf" "$BASE_DIR/" 2>/dev/null
+  done
+  rm -f /etc/luci-uploads/cc-en.txt 2>/dev/null
+fi
+mkdir -p "$BASE_DIR" 2>/dev/null
 [ -f "$STATE" ] || : > "$STATE"
 
 # Cron trailing comments are English-only (no locale data in shell code).

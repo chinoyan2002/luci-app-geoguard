@@ -6,6 +6,17 @@
 SET=geoguard_ban
 CFG=geoguard
 PERSIST="/etc/geoguard/ban-persist.list"
+# One-time state move from the pre-2.2.1 shared dir (see geoguard-fetch).
+mkdir -p /etc/geoguard 2>/dev/null
+if [ -d /etc/luci-uploads ]; then
+  for _mf in /etc/luci-uploads/*.cidr /etc/luci-uploads/ban-persist.list \
+            /etc/luci-uploads/ddns-allowlist.list /etc/luci-uploads/history.log \
+            /etc/luci-uploads/cc-en.txt; do
+    [ -e "$_mf" ] || continue
+    [ -e "/etc/geoguard/${_mf##*/}" ] || mv -f "$_mf" /etc/geoguard/ 2>/dev/null
+  done
+  rm -f /etc/luci-uploads/cc-en.txt 2>/dev/null
+fi
 nft list set inet fw4 $SET >/dev/null 2>&1 || exit 0
 
 g() { uci get $CFG.main."$1" 2>/dev/null; }

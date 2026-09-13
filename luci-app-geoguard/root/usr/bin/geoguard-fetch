@@ -16,6 +16,19 @@ done
 SELECTED="$SELECTED $(uci -q get geoguard.main.selected 2>/dev/null)"
 
 mkdir -p "$BASE_DIR" "$TEMP_DIR"
+# One-time state move from the pre-2.2.1 shared dir. Needed because some
+# install paths (e.g. apk file-install) never run uci-defaults on upgrade;
+# harmless no-op once moved (43 covers the postinst path).
+OLD_BASE="/etc/luci-uploads"
+if [ -d "$OLD_BASE" ]; then
+  for _mf in "$OLD_BASE"/*.cidr "$OLD_BASE"/ban-persist.list \
+            "$OLD_BASE"/ddns-allowlist.list "$OLD_BASE"/history.log \
+            "$OLD_BASE"/cc-en.txt; do
+    [ -e "$_mf" ] || continue
+    [ -e "$BASE_DIR/${_mf##*/}" ] || mv -f "$_mf" "$BASE_DIR/" 2>/dev/null
+  done
+  rm -f "$OLD_BASE/cc-en.txt" 2>/dev/null
+fi
 trap 'rm -rf "$TEMP_DIR"' EXIT
 
 upper() { echo "$1" | tr 'a-z' 'A-Z'; }
