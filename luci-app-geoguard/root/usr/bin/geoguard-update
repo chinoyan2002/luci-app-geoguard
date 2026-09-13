@@ -2,7 +2,7 @@
 # geoguard-update: fetch -> merge -> sync uci ipset sections -> refresh live sets
 # Sets: per-country (built only when the file exists) + merged + whitelist
 # (skipped when empty, no file kept); default whitelist name CustomAllow
-BASE_DIR="/etc/luci-uploads"
+BASE_DIR="/etc/geoguard"
 TEMP_DIR="/tmp/geoguard-$$"
 CCEN="$BASE_DIR/cc-en.txt"
 

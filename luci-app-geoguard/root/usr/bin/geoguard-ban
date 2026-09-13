@@ -5,7 +5,7 @@
 # Called by /etc/init.d/geoguard-ban (procd, interval read from ban_interval)
 SET=geoguard_ban
 CFG=geoguard
-PERSIST="/etc/luci-uploads/ban-persist.list"
+PERSIST="/etc/geoguard/ban-persist.list"
 nft list set inet fw4 $SET >/dev/null 2>&1 || exit 0
 
 g() { uci get $CFG.main."$1" 2>/dev/null; }
@@ -37,8 +37,8 @@ BANH=$(num "$(g ban_bantime)" 2)
 WEB=$(g ban_web); [ -z "$WEB" ] && WEB=1
 SSHO=$(g ban_ssh); [ -z "$SSHO" ] && SSHO=1
 WHITE=$(g white_name); [ -z "$WHITE" ] && WHITE=CustomAllow
-WLFILE="/etc/luci-uploads/$WHITE.cidr"
-STATE="/etc/luci-uploads/ddns-allowlist.list"
+WLFILE="/etc/geoguard/$WHITE.cidr"
+STATE="/etc/geoguard/ddns-allowlist.list"
 
 # CIDR membership test (awk, stdin line by line: CIDR or bare IP)
 in_list() {
@@ -86,16 +86,20 @@ persist_ban() {
 prune_persist() {
   # drop expired entries by time only (NOT by live absence: a fw4 reload
   # wipes the live set, and pruning then would defeat reboot restore;
-  # unban() purges the file explicitly on purpose-unbans)
+  # unban() purges the file explicitly on purpose-unbans).
+  # tmpfs scratch + rewrite only on change: no overlay wear when idle.
   now=$(date +%s)
-  : > "$PERSIST.tmp"
+  [ -s "$PERSIST" ] || return 0
+  ptmp=/tmp/geoguard-ban-persist.$$
+  : > "$ptmp"
   while read -r pip pstart; do
     [ -z "$pip" ] && continue
     if [ $((now - pstart)) -lt $((BANH * 3600)) ]; then
-      echo "$pip $pstart" >> "$PERSIST.tmp"
+      echo "$pip $pstart" >> "$ptmp"
     fi
-  done < "$PERSIST" 2>/dev/null
-  mv "$PERSIST.tmp" "$PERSIST" 2>/dev/null
+  done < "$PERSIST"
+  cmp -s "$ptmp" "$PERSIST" || mv "$ptmp" "$PERSIST" 2>/dev/null
+  rm -f "$ptmp"
 }
 ban_ip() {
   ip="$1"; tag="$2"

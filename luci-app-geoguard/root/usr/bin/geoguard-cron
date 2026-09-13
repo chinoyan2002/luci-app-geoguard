@@ -7,7 +7,7 @@ JOB="/usr/bin/geoguard-update"
 sed -i '\#geoguard-update#d' "$CRON_FILE" 2>/dev/null
 sed -i '\#geoguard-ddns#d' "$CRON_FILE" 2>/dev/null
 
-BASE_DIR="/etc/luci-uploads"
+BASE_DIR="/etc/geoguard"
 # Cron trailing comments are English-only (no locale data in shell code).
 # WARNING: the two NOTE_* lines have identical copies in geoguard-ddns;
 # both sides must match byte-for-byte, otherwise the ddns self-heal line

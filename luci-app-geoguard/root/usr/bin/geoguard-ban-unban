@@ -1,8 +1,8 @@
 #!/bin/sh
-# geoguard-ban-unban [ip|all]: 解封（防護頁按鈕用）
-# 同步清掉 reboot-restore 用的 persist，否則重開機會把剛解封的 IP 抓回來
+# geoguard-ban-unban [ip|all]: unban (guard page button);
+# also clears the reboot-restore persist, or reboot would re-ban just-unbanned IPs
 SET=geoguard_ban
-PERSIST="/etc/luci-uploads/ban-persist.list"
+PERSIST="/etc/geoguard/ban-persist.list"
 case "$1" in
   all|"")
     for ip in $(nft list set inet fw4 $SET 2>/dev/null | tr ',' '\n' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+ timeout' | awk '{print $1}'); do

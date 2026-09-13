@@ -1,7 +1,7 @@
 #!/bin/sh
 # geoguard-fetch: download per-country CIDR files only (no merge, no reload)
 # Purpose: backfill on first install, re-fetch sources standalone. Run geoguard-update to merge.
-BASE_DIR="/etc/luci-uploads"
+BASE_DIR="/etc/geoguard"
 TEMP_DIR="/tmp/cafetch-$$"
 
 SRC1=$(uci -q get geoguard.main.src_primary 2>/dev/null)

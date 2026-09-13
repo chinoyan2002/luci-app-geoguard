@@ -19,8 +19,8 @@ for k in ban_enabled ban_maxretry ban_findtime ban_bantime ban_web ban_ssh ban_i
   echo "$k=$(uci get geoguard.main.$k 2>/dev/null)"
 done
 echo "== DDNS tracking =="
-if [ -s /etc/luci-uploads/ddns-allowlist.list ]; then
-  cat /etc/luci-uploads/ddns-allowlist.list
+if [ -s /etc/geoguard/ddns-allowlist.list ]; then
+  cat /etc/geoguard/ddns-allowlist.list
 else
   echo "(none)"
 fi

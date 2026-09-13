@@ -1,7 +1,7 @@
 #!/bin/sh
 # geoguard-status: set status + update history + related system log (for LuCI log tab)
 # Output is display-only English (detailed); machine parsing uses geoguard-counts.
-BASE_DIR="/etc/luci-uploads"
+BASE_DIR="/etc/geoguard"
 SETNAME=$(uci -q get geoguard.main.setname 2>/dev/null)
 echo "$SETNAME" | grep -qE '^[A-Za-z][A-Za-z0-9_-]*$' || SETNAME="allowed-IPList"
 WHITENAME=$(uci -q get geoguard.main.white_name 2>/dev/null)

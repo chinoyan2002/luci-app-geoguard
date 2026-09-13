@@ -887,11 +887,11 @@ msgid "Latest merged IP set file: no data yet"
 msgstr ""
 
 #: applications/luci-app-geoguard/htdocs/luci-static/resources/view/geoguard.js:206
-msgid "Latest merged IP set file: /etc/luci-uploads/%s.cidr (%s lines / live %s entries / updated %s, checked %s — no changes)"
+msgid "Latest merged IP set file: /etc/geoguard/%s.cidr (%s lines / live %s entries / updated %s, checked %s — no changes)"
 msgstr ""
 
 #: applications/luci-app-geoguard/htdocs/luci-static/resources/view/geoguard.js:207
-msgid "Latest merged IP set file: /etc/luci-uploads/%s.cidr (%s lines / live %s entries / updated %s)"
+msgid "Latest merged IP set file: /etc/geoguard/%s.cidr (%s lines / live %s entries / updated %s)"
 msgstr ""
 
 #: applications/luci-app-geoguard/htdocs/luci-static/resources/view/geoguard.js:223
@@ -927,7 +927,7 @@ msgid "(none selected)"
 msgstr ""
 
 #: applications/luci-app-geoguard/htdocs/luci-static/resources/view/geoguard.js:309
-msgid "Search, e.g. TW 台灣 TAIWAN"
+msgid "Search, e.g. TW or TAIWAN"
 msgstr ""
 
 #: applications/luci-app-geoguard/htdocs/luci-static/resources/view/geoguard.js:316

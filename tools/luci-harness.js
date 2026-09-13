@@ -290,7 +290,7 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
   }
   // 路徑前後綴裝飾（mockup 標準）
   const allText7 = NODES.map((n) => n.textContent || '').join('\n');
-  if (allText7.indexOf('/etc/luci-uploads/') < 0 || allText7.indexOf('.cidr') < 0) {
+  if (allText7.indexOf('/etc/geoguard/') < 0 || allText7.indexOf('.cidr') < 0) {
     console.error('HARNESS-FAIL: 集合名列缺路徑前後綴');
     process.exit(1);
   }

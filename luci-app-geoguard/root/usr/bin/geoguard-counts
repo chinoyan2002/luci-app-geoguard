@@ -1,8 +1,8 @@
 #!/bin/sh
-# geoguard-counts：目前啟用的集合檔行數＋live 段數＋檔案日期＋最後檢查日期（給設定頁用）
-# 輸出：集合名 檔行數 live段數 FILEDATE CHECKDATE（底線分隔，JS 好切；
-# CHECKDATE 取 history.log 最後一行時間，無則同 FILEDATE）
-BASE_DIR="/etc/luci-uploads"
+# geoguard-counts: active set file lines + live elements + file date + last check date (settings page)
+# Output: name filelines livecount FILEDATE CHECKDATE (underscore-separated for JS;
+# CHECKDATE from history.log last line time, FILEDATE if none)
+BASE_DIR="/etc/geoguard"
 SETNAME=$(uci -q get geoguard.main.setname 2>/dev/null)
 echo "$SETNAME" | grep -qE '^[A-Za-z][A-Za-z0-9_-]*$' || SETNAME="allowed-IPList"
 FILE="$BASE_DIR/${SETNAME}.cidr"

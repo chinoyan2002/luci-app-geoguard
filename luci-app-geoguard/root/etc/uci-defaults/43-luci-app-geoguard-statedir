@@ -1,0 +1,15 @@
+#!/bin/sh
+# 43-luci-app-geoguard-statedir: move state from the pre-2.2.1 shared directory
+# to the package-owned one (runs once at install/upgrade via postinst).
+OLD_DIR="/etc/luci-uploads"
+NEW_DIR="/etc/geoguard"
+mkdir -p "$NEW_DIR"
+for f in "$OLD_DIR"/*.cidr "$OLD_DIR"/ban-persist.list \
+         "$OLD_DIR"/ddns-allowlist.list "$OLD_DIR"/history.log \
+         "$OLD_DIR"/cc-en.txt; do
+  [ -e "$f" ] || continue
+  [ -e "$NEW_DIR/$(basename "$f")" ] || mv -f "$f" "$NEW_DIR/" 2>/dev/null
+done
+# stale shipped copy from old packages (new packages ship it under NEW_DIR)
+rm -f "$OLD_DIR/cc-en.txt" 2>/dev/null
+exit 0

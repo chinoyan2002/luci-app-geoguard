@@ -4,7 +4,7 @@
 # Removing a host = purge (state + records cut clean); IP change = state swap; success only logs
 # Ban exemption reads the state file directly; allow/block via IP sets is
 # unrelated to this script (only link is the manual whitelist)
-BASE_DIR="/etc/luci-uploads"
+BASE_DIR="/etc/geoguard"
 STATE="$BASE_DIR/ddns-allowlist.list"
 HIST="$BASE_DIR/history.log"
 # One-time move from the pre-2.2.0 state filename
