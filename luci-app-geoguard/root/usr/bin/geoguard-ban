@@ -13,8 +13,13 @@ if [ -d /etc/luci-uploads ]; then
             /etc/luci-uploads/ddns-allowlist.list /etc/luci-uploads/history.log \
             /etc/luci-uploads/cc-en.txt; do
     [ -e "$_mf" ] || continue
-    [ -e "/etc/geoguard/${_mf##*/}" ] || mv -f "$_mf" /etc/geoguard/ 2>/dev/null
+    [ -s "/etc/geoguard/${_mf##*/}" ] || mv -f "$_mf" /etc/geoguard/ 2>/dev/null
   done
+  if [ -s /etc/luci-uploads/history.log ] && [ -s /etc/geoguard/history.log ]; then
+    cat /etc/luci-uploads/history.log /etc/geoguard/history.log > /etc/geoguard/history.log.new 2>/dev/null \
+      && mv -f /etc/geoguard/history.log.new /etc/geoguard/history.log 2>/dev/null \
+      && rm -f /etc/luci-uploads/history.log 2>/dev/null
+  fi
   rm -f /etc/luci-uploads/cc-en.txt 2>/dev/null
 fi
 nft list set inet fw4 $SET >/dev/null 2>&1 || exit 0

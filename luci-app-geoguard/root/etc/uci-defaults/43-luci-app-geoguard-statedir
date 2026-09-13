@@ -8,8 +8,14 @@ for f in "$OLD_DIR"/*.cidr "$OLD_DIR"/ban-persist.list \
          "$OLD_DIR"/ddns-allowlist.list "$OLD_DIR"/history.log \
          "$OLD_DIR"/cc-en.txt; do
   [ -e "$f" ] || continue
-  [ -e "$NEW_DIR/$(basename "$f")" ] || mv -f "$f" "$NEW_DIR/" 2>/dev/null
+  [ -s "$NEW_DIR/${f##*/}" ] || mv -f "$f" "$NEW_DIR/" 2>/dev/null
 done
+# history.log: prepend stranded old entries (chronological) instead of stranding them
+if [ -s "$OLD_DIR/history.log" ] && [ -s "$NEW_DIR/history.log" ]; then
+  cat "$OLD_DIR/history.log" "$NEW_DIR/history.log" > "$NEW_DIR/history.log.new" 2>/dev/null \
+    && mv -f "$NEW_DIR/history.log.new" "$NEW_DIR/history.log" 2>/dev/null \
+    && rm -f "$OLD_DIR/history.log" 2>/dev/null
+fi
 # stale shipped copy from old packages (new packages ship it under NEW_DIR)
 rm -f "$OLD_DIR/cc-en.txt" 2>/dev/null
 exit 0
