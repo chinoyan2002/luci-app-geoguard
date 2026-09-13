@@ -5,7 +5,7 @@
 'require ui';
 'require uci';
 
-var VERSION = '2.2.1';
+var VERSION = '2.2.0';
 var fmt = function(s) {
 	var args = Array.prototype.slice.call(arguments, 1);
 	var i = 0;
@@ -203,8 +203,8 @@ return view.extend({
 			var fdate = (p[3] || '').replace('_', ' ');
 			var cdate = (p[4] || '').replace('_', ' ');
 			if (cdate && cdate !== fdate)
-			return fmt(_('Latest merged IP set file: /etc/geoguard/%s.cidr (%s lines / live %s entries / updated %s, checked %s — no changes)'), p[0], p[1], p[2], fdate, cdate);
-		return fmt(_('Latest merged IP set file: /etc/geoguard/%s.cidr (%s lines / live %s entries / updated %s)'), p[0], p[1], p[2], fdate);
+				return fmt(_('Latest merged IP set file: /etc/geoguard/%s.cidr (%s lines / live %s entries / updated %s, checked %s — no changes)'), p[0], p[1], p[2], fdate, cdate);
+			return fmt(_('Latest merged IP set file: /etc/geoguard/%s.cidr (%s lines / live %s entries / updated %s)'), p[0], p[1], p[2], fdate);
 		};
 
 		var refreshCounts = function() {
@@ -358,7 +358,7 @@ return view.extend({
 			var headRow = E('div', { 'style': 'display:flex;align-items:center;gap:0.5em;margin-bottom:0.5em;flex-wrap:wrap' }, [
 				E('strong', {}, [_('Select countries')]),
 				input, clearBtn,
-					E('span', { 'style': 'color:#999' }, [':']),
+				E('span', { 'style': 'color:#999' }, [':']),
 				selAllBtn, selNoneBtn, selLine
 			]);
 			input.style.flex = '1';
@@ -452,8 +452,8 @@ return view.extend({
 				inp.addEventListener('change', function() { cb((inp.value || '').trim()); });
 				return inp;
 			};
-				var setInp = mkName('setname', nameState.set, function(v) { nameDirty = true; nameState.set = v; });
-				var whiteInp = mkName('white_name', nameState.white, function(v) { nameDirty = true; nameState.white = v; });
+			var setInp = mkName('setname', nameState.set, function(v) { nameDirty = true; nameState.set = v; });
+			var whiteInp = mkName('white_name', nameState.white, function(v) { nameDirty = true; nameState.white = v; });
 			var nameRow = function(title, desc, inp) {
 				return E('div', { 'class': 'cbi-value' }, [
 					E('label', { 'class': 'cbi-value-title' }, [title]),
@@ -569,9 +569,9 @@ return view.extend({
 					});
 				}).then(function(res) {
 					if (res.skip) {
-					ui.addNotification(null, E('p', okmsg), 'info');
-				} else if (res.code === 0) {
-					ui.addNotification(null, E('p', okmsg), 'info');
+						ui.addNotification(null, E('p', okmsg), 'info');
+					} else if (res.code === 0) {
+						ui.addNotification(null, E('p', okmsg), 'info');
 						return refreshCounts();
 					} else {
 						ui.addNotification(null, E('p', fmt(_('Update failed: %s'), res.stderr || res.stdout || _('unknown error'))), 'error');
@@ -674,9 +674,9 @@ return view.extend({
 		var robustApply = function(retried) {
 			return uci.apply().catch(function(e) {
 				var msg = (e && e.message) || '';
-				if (/code 5|NO_DATA|No data|未收到資料/i.test(msg))
+				if (/code 5|NO_DATA|No data/i.test(msg))
 					return null;
-				if (!retried && /code 6|permission denied|權限被拒絕/i.test(msg))
+				if (!retried && /code 6|permission denied/i.test(msg))
 					return new Promise(function(resolve) { setTimeout(resolve, 1000); }).then(function() { return robustApply(true); });
 				throw e;
 			});
