@@ -3,8 +3,8 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_VERSION:=2.2.0
-PKG_RELEASE:=1
+PKG_VERSION:=2.2.1
+PKG_RELEASE:=4
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=LICENSE
 PKG_MAINTAINER:=Yang Min Sheng <chinoyan@gmail.com>
