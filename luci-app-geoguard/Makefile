@@ -14,6 +14,11 @@ LUCI_DESCRIPTION:=GeoGuard builds country allow-list ipsets for firewall4 from I
 LUCI_DEPENDS:=+luci-base +firewall4 +wget-ssl +jsonfilter
 LUCI_PKGARCH:=all
 
+define Package/luci-app-geoguard/conffiles
+/etc/config/geoguard
+/etc/nftables.d/10-geoguard-guard.nft
+endef
+
 include $(TOPDIR)/feeds/luci/luci.mk
 
 # call BuildPackage - luci.mk handles it

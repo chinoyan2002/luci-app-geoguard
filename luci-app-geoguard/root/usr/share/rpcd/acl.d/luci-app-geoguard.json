@@ -4,8 +4,7 @@
 		"read": {
 			"uci": [ "geoguard" ],
 			"file": {
-				"/etc/geoguard/*.cidr": [ "read" ],
-				"/usr/bin/geoguard-status": [ "exec" ],
+			"/usr/bin/geoguard-status": [ "exec" ],
 				"/usr/bin/geoguard-counts": [ "exec" ],
 				"/usr/bin/geoguard-ban-status": [ "exec" ]
 			},
@@ -16,8 +15,7 @@
 		"write": {
 			"uci": [ "geoguard" ],
 			"file": {
-				"/etc/geoguard/*.cidr": [ "write" ],
-				"/usr/bin/geoguard-fetch": [ "exec" ],
+			"/usr/bin/geoguard-fetch": [ "exec" ],
 				"/usr/bin/geoguard-update": [ "exec" ],
 				"/usr/bin/geoguard-cron": [ "exec" ],
 				"/usr/bin/geoguard-clear-history": [ "exec" ],
