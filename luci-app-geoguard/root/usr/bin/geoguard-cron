@@ -23,6 +23,9 @@ case "$DDNS_I" in ''|*[!0-9]*) DDNS_I=30 ;; esac
 [ "$DDNS_I" -lt 1 ] && DDNS_I=1
 [ "$DDNS_I" -gt 60 ] && DDNS_I=60
 DNOTE="$NOTE_DDNS"; UNOTE="$NOTE_UPDATE"
+# crontabs often lack a trailing newline (LuCI editor saves verbatim);
+# appending then glues our entry onto the user's last line, breaking both.
+[ -s "$CRON_FILE" ] && [ -n "$(tail -c 1 "$CRON_FILE")" ] && echo "" >> "$CRON_FILE"
 echo "*/$DDNS_I * * * * /usr/bin/geoguard-ddns $DNOTE" >> "$CRON_FILE"
 /usr/bin/geoguard-ddns
 
@@ -39,6 +42,7 @@ if [ "$(uci -q get geoguard.main.auto_update)" = "1" ]; then
 		monthly) SPEC="$MIN $HOUR 1 * *" ;;
 		*)       SPEC="$MIN $HOUR * * *" ;;
 	esac
+	[ -s "$CRON_FILE" ] && [ -n "$(tail -c 1 "$CRON_FILE")" ] && echo "" >> "$CRON_FILE"
 	echo "$SPEC $JOB $UNOTE" >> "$CRON_FILE"
 	logger -t geoguard "schedule set: $SPEC"
 else
