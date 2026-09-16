@@ -1,5 +1,10 @@
 __pycache__/
 *.pyc
+# local-only build artifacts, history archive and session scratch
+packages/
+archive/
+ses_*.json
+new-session-*.json
 # local-only AI/dev notes, never publish
 AGENTS.md
 HANDOFF.md
