@@ -49,7 +49,8 @@ cc_en() {
   echo "$en"
 }
 
-/usr/bin/geoguard-fetch
+# fetch runs under this lock (env flag tells it to skip its own acquisition).
+GEOGUARD_LOCKED=1 /usr/bin/geoguard-fetch
 
 # Append per-country fetch results to history
 if [ -f "$BASE_DIR/.fetch-results" ]; then
@@ -261,10 +262,19 @@ done
 for item in $DESIRED; do
   nm="${item%%:*}"
   fl="${item#*:}"
-  [ -s "$fl" ] || continue
+  if [ ! -s "$fl" ]; then
+    # Loud missing-state warning: fw4 silently materializes empty sets for
+    # dangling loadfiles, so say it here instead of failing quietly.
+    logger -t geoguard "WARNING state file missing, skipped live refresh: $fl (wiped? restore backup or run update-merge)"
+    continue
+  fi
   if nft list set inet fw4 "$nm" >/dev/null 2>&1; then
-    nft flush set inet fw4 "$nm"
-    { printf 'add element inet fw4 %s { ' "$nm"; tr '\n' ',' < "$fl" | sed 's/,$//'; printf ' }\n'; } \
+    # Atomic refresh: flush + refill in a single nft transaction, so
+    # readers never observe an empty set (refill takes minutes on mips).
+    # On any error the whole batch aborts and the old content stays.
+    { printf 'flush set inet fw4 %s;\n' "$nm";
+      printf 'add element inet fw4 %s { ' "$nm";
+      tr '\n' ',' < "$fl" | sed 's/,$//'; printf ' }\n'; } \
       | nft -f - 2>/dev/null || logger -t geoguard "live refresh failed: $nm"
   fi
 done
