@@ -45,6 +45,9 @@ case "$DI" in ''|*[!0-9]*) DI=30 ;; esac
 DLINE="*/$DI * * * * /usr/bin/geoguard-ddns $NOTE_DDNS"
 grep -qxF "$DLINE" /etc/crontabs/root 2>/dev/null || {
   sed -i '\#geoguard-ddns#d' /etc/crontabs/root 2>/dev/null
+  # crontabs often lack a trailing newline; appending then glues our entry
+  # onto the user's last line, breaking both (same guard as geoguard-cron).
+  [ -s /etc/crontabs/root ] && [ -n "$(tail -c 1 /etc/crontabs/root)" ] && echo "" >> /etc/crontabs/root
   echo "$DLINE" >> /etc/crontabs/root
   /etc/init.d/cron restart >/dev/null 2>&1
 }
