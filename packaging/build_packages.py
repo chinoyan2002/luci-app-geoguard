@@ -119,7 +119,7 @@ def main():
                'Description: GeoGuard - country allow-list IPS with whitelist, '
                'DDNS allowlist and login guard for firewall4 (LuCI, zh-TW/en)\n')
     open(os.path.join(stage_dir, 'CONTROL', 'control'), 'w', encoding='utf-8', newline='').write(control)
-    open(os.path.join(stage_dir, 'CONTROL', 'conffiles'), 'w', encoding='utf-8', newline='').write('/etc/config/geoguard\n')
+    open(os.path.join(stage_dir, 'CONTROL', 'conffiles'), 'w', encoding='utf-8', newline='').write('/etc/config/geoguard\n/etc/nftables.d/10-geoguard-guard.nft\n')
     shutil.copyfile(os.path.join(ROOT_DIR, 'packaging', 'ipk-postinst'),
                     os.path.join(stage_dir, 'CONTROL', 'postinst'))
     shutil.copyfile(os.path.join(ROOT_DIR, 'packaging', 'ipk-prerm'),
