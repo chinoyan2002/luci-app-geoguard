@@ -21,7 +21,7 @@ APP = 'luci-app-geoguard'
 APP_ROOT = os.path.join(ROOT_DIR, APP, 'root')
 PO_DIR = os.path.join(ROOT_DIR, APP, 'po')
 APKBUILD_PATH = os.path.join(ROOT_DIR, 'packaging', 'APKBUILD')
-OUT_BASE = os.path.normpath(os.path.join(ROOT_DIR, '..', '2329225-OpenWrtX86-HOME'))
+OUT_BASE = os.path.join(ROOT_DIR, 'packages')
 
 # Import py_lmo
 sys.path.insert(0, os.path.join(ROOT_DIR, 'tools'))
