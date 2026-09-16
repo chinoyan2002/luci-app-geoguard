@@ -16,6 +16,7 @@ done
 SELECTED="$SELECTED $(uci -q get geoguard.main.selected 2>/dev/null)"
 
 mkdir -p "$BASE_DIR" "$TEMP_DIR"
+trap 'rm -rf "$TEMP_DIR"' EXIT
 # Single-flight with geoguard-update: same lockdir path as update's H2 lock.
 # Skipped when invoked by geoguard-update itself (GEOGUARD_LOCKED=1 exported
 # by the caller, which already holds the lock).
@@ -58,7 +59,6 @@ if [ -d "$OLD_BASE" ]; then
   fi
   rm -f "$OLD_BASE/cc-en.txt" 2>/dev/null
 fi
-trap 'rm -rf "$TEMP_DIR"' EXIT
 
 upper() { echo "$1" | tr 'a-z' 'A-Z'; }
 
