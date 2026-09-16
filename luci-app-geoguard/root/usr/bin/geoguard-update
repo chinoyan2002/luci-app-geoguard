@@ -264,8 +264,12 @@ for item in $DESIRED; do
   fl="${item#*:}"
   [ -s "$fl" ] || continue
   if nft list set inet fw4 "$nm" >/dev/null 2>&1; then
-    nft flush set inet fw4 "$nm"
-    { printf 'add element inet fw4 %s { ' "$nm"; tr '\n' ',' < "$fl" | sed 's/,$//'; printf ' }\n'; } \
+    # Atomic refresh: flush + refill in a single nft transaction, so
+    # readers never observe an empty set (refill takes minutes on mips).
+    # On any error the whole batch aborts and the old content stays.
+    { printf 'flush set inet fw4 %s;\n' "$nm";
+      printf 'add element inet fw4 %s { ' "$nm";
+      tr '\n' ',' < "$fl" | sed 's/,$//'; printf ' }\n'; } \
       | nft -f - 2>/dev/null || logger -t geoguard "live refresh failed: $nm"
   fi
 done
