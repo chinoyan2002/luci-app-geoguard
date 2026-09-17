@@ -16,6 +16,7 @@
 - 認證用 GitHub device flow；密碼/key/token/sessionid 永不進 repo（push 前掃）。
 
 ## 3. openwrt-ai 鐵律清單（2026-09-17 已讀到 bc9869d；2026-09-18 本地已實作 r4033045903/6582/7209；有新 review 即追加）
+> PR 同步：`1339e1a` 已 force-push 至 `add-luci-app-geoguard`（單 commit，sign-off 不變）；3 串回覆 `4040894778/80/85`＋總結 `issuecomment-5720352200`。獨立包 repo 另有 `fetch` 狀態搬家＋`js VERSION 2.2.1`（PR 未含，勿整檔覆蓋，只動手術式 hunk）。
 - awk：BusyBox 無 `rshift()` 等 gawk 擴充，用 `int(x/2^(32-m))` 純算術（`geoguard-ban` in_list/in_exempt/ban_ip）。
 - ACL：view 無 `fs.read/fs.write` 即不授 `*.cidr` 讀寫（fw4 `loadfile` 消費檔不可放寬）；每 helper 最小 `exec`；4-tab 縮排；保留 `uci geoguard` 讀寫。
 - Makefile：`conffiles` 含 `/etc/config/geoguard`＋runtime 重產的 guard nft；`LUCI_PKGARCH:=all`。
