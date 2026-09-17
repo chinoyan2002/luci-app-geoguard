@@ -13,6 +13,7 @@
 - 單一 well-formed commit（記取 #9023 broken force-push 教訓，勿重寫 parent）。
 - 訊息只描述 shipped behaviour，不寫 vs 未合併舊版的 delta。
 - `Signed-off-by: Yang Min Sheng <chinoyan@gmail.com>` 須與 PR 描述名一致。
+- commit body 每行 ≤100 字（FormalityCheck 硬門檻；續行縮排 2 格；`1339e1a→b85849e` 只改訊息即過）。
 - 認證用 GitHub device flow；密碼/key/token/sessionid 永不進 repo（push 前掃）。
 
 ## 3. openwrt-ai 鐵律清單（2026-09-17 已讀到 bc9869d；2026-09-18 本地已實作 r4033045903/6582/7209；有新 review 即追加）
