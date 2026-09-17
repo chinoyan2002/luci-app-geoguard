@@ -17,10 +17,13 @@ SELECTED="$SELECTED $(uci -q get geoguard.main.selected 2>/dev/null)"
 
 mkdir -p "$BASE_DIR" "$TEMP_DIR"
 trap 'rm -rf "$TEMP_DIR"' EXIT
-# Single-flight with geoguard-update: same lockdir path as update's H2 lock.
+# Single-flight with geoguard-update: shared lockdir on tmpfs (NOT under
+# $BASE_DIR: keep.d carries /etc/geoguard across sysupgrade, and a restored
+# pid would make kill -0 misfire exit 0 forever).
 # Skipped when invoked by geoguard-update itself (GEOGUARD_LOCKED=1 exported
 # by the caller, which already holds the lock).
-LOCKDIR="$BASE_DIR/.update.lockdir"
+LOCKDIR="/var/lock/geoguard-update.lockdir"
+mkdir -p /var/lock 2>/dev/null
 if [ -z "$GEOGUARD_LOCKED" ]; then
   if ! mkdir "$LOCKDIR" 2>/dev/null; then
     LPID=$(cat "$LOCKDIR/pid" 2>/dev/null)

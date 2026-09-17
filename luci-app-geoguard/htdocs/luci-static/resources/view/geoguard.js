@@ -153,6 +153,10 @@ function pushCountries() {
 		else
 			uci.unset('geoguard', 'main', 'whitelist');
 	}
+	/* first-save marker: 40-seeding runs only after the user pressed save
+	   once (shipped default 'tw' must not trigger silent downloads). */
+	if (countryDirty || schedDirty || nameDirty || wlDirty)
+		uci.set('geoguard', 'main', 'ui_saved', '1');
 	return uci.save();
 }
 

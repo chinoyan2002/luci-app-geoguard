@@ -22,8 +22,11 @@ WHITELIST=$(uci -q get geoguard.main.whitelist 2>/dev/null)
 
 mkdir -p "$BASE_DIR" "$TEMP_DIR"
 # H2: single-flight (cron vs manual clicks). mkdir is atomic; stale lock
-# (kill -9) is reclaimed via pid check.
-LOCKDIR="$BASE_DIR/.update.lockdir"
+# (kill -9) is reclaimed via pid check. Lock lives on tmpfs (NOT under
+# $BASE_DIR: keep.d carries /etc/geoguard across sysupgrade, and a restored
+# pid would make kill -0 misfire exit 0 forever).
+LOCKDIR="/var/lock/geoguard-update.lockdir"
+mkdir -p /var/lock 2>/dev/null
 if ! mkdir "$LOCKDIR" 2>/dev/null; then
   LPID=$(cat "$LOCKDIR/pid" 2>/dev/null)
   if [ -n "$LPID" ] && kill -0 "$LPID" 2>/dev/null; then
@@ -262,12 +265,6 @@ done
 for item in $DESIRED; do
   nm="${item%%:*}"
   fl="${item#*:}"
-  if [ ! -s "$fl" ]; then
-    # Loud missing-state warning: fw4 silently materializes empty sets for
-    # dangling loadfiles, so say it here instead of failing quietly.
-    logger -t geoguard "WARNING state file missing, skipped live refresh: $fl (wiped? restore backup or run update-merge)"
-    continue
-  fi
   if nft list set inet fw4 "$nm" >/dev/null 2>&1; then
     # Atomic refresh: flush + refill in a single nft transaction, so
     # readers never observe an empty set (refill takes minutes on mips).

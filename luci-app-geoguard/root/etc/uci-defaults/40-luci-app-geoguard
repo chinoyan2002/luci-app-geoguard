@@ -5,11 +5,13 @@ mkdir -p /etc/geoguard 2>/dev/null
 /usr/bin/geoguard-cron 2>/dev/null
 # Seed empty state: fresh install (or wipe) with a country/whitelist
 # selection but no data files yet -> fetch+merge once in background.
+# Gated on UI first-save marker (ui_saved): the shipped default 'tw' must
+# not trigger silent downloads + firewall commits before the user opens UI.
 # Non-blocking and never fails install: offline boxes just log, the
 # scheduled run (or manual update) picks it up later.
 SETNAME=$(uci -q get geoguard.main.setname 2>/dev/null)
 [ -z "$SETNAME" ] && SETNAME="allowed-IPList"
-if [ ! -s "/etc/geoguard/$SETNAME.cidr" ]; then
+if [ "$(uci -q get geoguard.main.ui_saved 2>/dev/null)" = "1" ] && [ ! -s "/etc/geoguard/$SETNAME.cidr" ]; then
   if [ -n "$(uci -q get geoguard.main.selected 2>/dev/null)$(uci -q get geoguard.main.whitelist 2>/dev/null)" ]; then
     logger -t geoguard "empty state with selection, seeding in background"
     ( /usr/bin/geoguard-update >/dev/null 2>&1 & )

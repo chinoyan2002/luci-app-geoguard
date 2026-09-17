@@ -34,6 +34,10 @@ uci commit firewall && fw4 reload
 - `packaging/`：APKBUILD＋一鍵產線 `build_packages.py`＋說明 `BUILD.md`
 - 改 `.js` 跑 harness 全綠，改 `.sh` 跑 `sh -n`＋零 CR；LF 換行（`.gitattributes` 鎖定）
 
+## 治理
+
+最高指導：`GOVERNANCE.md`（上游 `openwrt/luci#9027` 內 openwrt-ai 要求優先；牴觸時它贏）。
+
 ## 授權
 
 MIT，見 LICENSE。
@@ -75,6 +79,10 @@ uci commit firewall && fw4 reload
 - `tools/luci-harness.js`: frontend tests (mini-DOM); `tools/i18n-check.js`: zh/en sync gate; `tools/py_lmo.py`: po→lmo
 - `packaging/`: APKBUILD + one-shot pipeline `build_packages.py` + notes in `BUILD.md`
 - After touching `.js`, harness must be all green; after touching `.sh`, `sh -n` + zero CR; LF endings (locked by `.gitattributes`)
+
+## Governance
+
+Highest guidance: `GOVERNANCE.md` (openwrt-ai requirements in upstream `openwrt/luci#9027` win on conflict).
 
 ## License
 
