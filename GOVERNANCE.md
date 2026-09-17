@@ -4,6 +4,7 @@
 > 本套件開發、Git 推送、簽名、commit 訊息，一切以該 PR 的 openwrt-ai 要求為準。
 > 與 `AGENTS.md` Hard rules 或其他手冊牴觸時，openwrt-ai 贏，舊條文讓路並在此註明。
 > 追蹤方式：活體追蹤（PR 有新 review 即更新本檔 §3＋日期）。
+> 鐵律：PR 上每做完一輪修改必回覆（review thread 逐串回＋一次總結留言；bot 檢查只推碼不需回，但純訊息修正等仍留一則總結）。
 
 ## 1. 效力
 1. `GOVERNANCE.md` > `AGENTS.md` > `HANDOFF.md`/`SPEC.md`/`RUNBOOK.md`/`PITFALLS.md`。
