@@ -21,7 +21,9 @@
 				"/usr/bin/geoguard-clear-history": [ "exec" ],
 				"/usr/bin/geoguard-ban-guard": [ "exec" ],
 				"/usr/bin/geoguard-ban-unban all": [ "exec" ],
-				"/etc/init.d/geoguard-ban reload": [ "exec" ]
+				"/etc/init.d/geoguard-ban reload": [ "exec" ],
+				"/etc/init.d/geoguard-ban enable": [ "exec" ],
+				"/etc/init.d/geoguard-ban disable": [ "exec" ]
 			},
 			"ubus": {
 				"file": [ "exec" ]

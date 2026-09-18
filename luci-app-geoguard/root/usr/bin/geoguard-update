@@ -21,6 +21,7 @@ SELECTED="$SELECTED $(uci -q get geoguard.main.selected 2>/dev/null)"
 WHITELIST=$(uci -q get geoguard.main.whitelist 2>/dev/null)
 
 mkdir -p "$BASE_DIR" "$TEMP_DIR"
+trap 'rm -rf "$TEMP_DIR"' EXIT
 # H2: single-flight (cron vs manual clicks). mkdir is atomic; stale lock
 # (kill -9) is reclaimed via pid check. Lock lives on tmpfs (NOT under
 # $BASE_DIR: keep.d carries /etc/geoguard across sysupgrade, and a restored

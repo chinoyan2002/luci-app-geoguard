@@ -515,7 +515,7 @@ return view.extend({
 			hourSel.addEventListener('change', function() { schedDirty = true; schedState.hour = hourSel.value; });
 			minSel.addEventListener('change', function() { schedDirty = true; schedState.min = minSel.value; });
 			var autoCb = E('input', { 'type': 'checkbox' });
-			if ((uci.get('geoguard', 'main', 'auto_update') || '1') === '1')
+			if ((uci.get('geoguard', 'main', 'auto_update') || '0') === '1')
 				autoCb.checked = true;
 			schedState.auto = autoCb.checked ? '1' : '0';
 			autoCb.addEventListener('change', function() { schedDirty = true; schedState.auto = autoCb.checked ? '1' : '0'; });
@@ -819,6 +819,11 @@ return view.extend({
 					return fs.exec('/usr/bin/geoguard-cron');
 				}).then(function() {
 					return fs.exec('/usr/bin/geoguard-ban-guard');
+				}).then(function() {
+					/* boot persistence follows the flag: enable on / disable off
+					   (reload alone starts/stops now but does not survive reboot) */
+					var ben = uci.get('geoguard', 'main', 'ban_enabled') || '0';
+					return fs.exec('/etc/init.d/geoguard-ban', [ben === '1' ? 'enable' : 'disable']);
 				}).then(function() {
 					return fs.exec('/etc/init.d/geoguard-ban', ['reload']);
 				}).then(function(res) {
