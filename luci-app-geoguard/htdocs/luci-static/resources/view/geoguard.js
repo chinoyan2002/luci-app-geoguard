@@ -636,7 +636,7 @@ return view.extend({
 
 		/* ---- Login guard tab (compact 7-row layout) ---- */
 		o = s.taboption('ban', form.Flag, 'ban_enabled', _('Enable this option to block IP addresses with too many failed logins'));
-		o.default = '1';
+		o.default = '0';
 		o.rmempty = false;
 		o.description = _('Disabling stops the guard service; active bans stay until expiry.');
 
