@@ -22,7 +22,8 @@
 
 ## 3. openwrt-ai 鐵律清單（2026-09-19 已讀 round-7 兩條 4052202758/013；有新 review 即追加）
 > PR 同步：`c1d3c5b` 已 force-push（單 commit，sign-off 不變，body ≤100）；2 串回覆 `4052545282/83`＋總結 `issuecomment-5740201560`。ban_enabled 全 repo 8 處 fail-quiet 稽核完。獨立包 repo 另有 `fetch/ban` 狀態搬家＋`js VERSION 2.2.1`（PR 未含，勿整檔覆蓋，只動手術式 hunk）。
-> 兩案制（用戶原則，AI 未牴觸）：新裝零修改（三 OFF＋uci-defaults 無 marker 即靜默）；升級照存檔還原（防 rules 指空集合鎖死）。
+> 兩案制（用戶原則，AI 未牴觸）：新裝零修改（三 OFF＋uci-defaults 無啟用證據即靜默）；升級照存檔還原（防 rules 指空集合鎖死）。
+> 2026-09-20 修正：restore 條件從 ui_saved 擴為「任一啟用證據」（opkg prerm 升級照清 cron，舊設定無 marker 會被靜默斷排程，2244526 實證）。
 - awk：BusyBox 無 `rshift()` 等 gawk 擴充，用 `int(x/2^(32-m))` 純算術（`geoguard-ban` in_list/in_exempt/ban_ip）。
 - ACL：view 無 `fs.read/fs.write` 即不授 `*.cidr` 讀寫（fw4 `loadfile` 消費檔不可放寬）；每 helper 最小 `exec`；4-tab 縮排；保留 `uci geoguard` 讀寫。
 - Makefile：`conffiles` 含 `/etc/config/geoguard`＋runtime 重產的 guard nft；`LUCI_PKGARCH:=all`。
