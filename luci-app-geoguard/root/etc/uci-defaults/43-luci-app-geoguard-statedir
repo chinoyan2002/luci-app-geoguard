@@ -28,7 +28,9 @@ rm -f "$OLD_DIR/cc-en.txt" 2>/dev/null
 # data moved -> repoint; data exists nowhere and unreferenced -> delete;
 # data exists nowhere but still referenced -> keep + loud error (same H1
 # policy as geoguard-update: never silently break a live rule).
-for sec in $(uci show firewall 2>/dev/null | grep -F "loadfile='$OLD_DIR/" | cut -d= -f1); do
+# Descending index order: deleting renumbers anonymous sections, so acting
+# top-down would skip entries (same rule as the update sweep).
+for sec in $(uci show firewall 2>/dev/null | grep -F "loadfile='$OLD_DIR/" | cut -d= -f1 | sort -t'[' -k2 -rn); do
   _old=$(uci -q get "$sec" 2>/dev/null)
   _new="$NEW_DIR/${_old##*/}"
   if [ -s "$_new" ]; then
