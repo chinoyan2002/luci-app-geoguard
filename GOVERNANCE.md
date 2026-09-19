@@ -1,10 +1,13 @@
 # GOVERNANCE — 最高指導原則（openwrt-ai #9027 優先）
 
-> Source of truth: https://github.com/openwrt/luci/pull/9027 內 `openwrt-ai` review。
+> Source of truth: https://github.com/openwrt/luci/pull/9027 內 `openwrt-ai` review（PR 已於 2026-09-19 撤回，見下）。
 > 本套件開發、Git 推送、簽名、commit 訊息，一切以該 PR 的 openwrt-ai 要求為準。
 > 與 `AGENTS.md` Hard rules 或其他手冊牴觸時，openwrt-ai 贏，舊條文讓路並在此註明。
 > 追蹤方式：活體追蹤（PR 有新 review 即更新本檔 §3＋日期）。
 > 鐵律：PR 上每做完一輪修改必回覆（review thread 逐串回＋一次總結留言；bot 檢查只推碼不需回，但純訊息修正等仍留一則總結）。
+>
+> ## PR 撤回（2026-09-19，dibdot NAK：錯 repo＋重複＋驗證質疑）
+> 接受維持者判斷，不爭辯；續留自家 repo＋release feed。rshift 認了：上機沒跑過 ban 豁免路徑，verified-live 寫過頭。round-8 三 nit 已在自家樹修掉（`127683e`），未推 PR。關門留言 `issuecomment-5744493473`。
 
 ## 1. 效力
 1. `GOVERNANCE.md` > `AGENTS.md` > `HANDOFF.md`/`SPEC.md`/`RUNBOOK.md`/`PITFALLS.md`。
