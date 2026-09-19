@@ -22,23 +22,15 @@ WHITELIST=$(uci -q get geoguard.main.whitelist 2>/dev/null)
 
 mkdir -p "$BASE_DIR" "$TEMP_DIR"
 trap 'rm -rf "$TEMP_DIR"' EXIT
-# H2: single-flight (cron vs manual clicks). mkdir is atomic; stale lock
-# (kill -9) is reclaimed via pid check. Lock lives on tmpfs (NOT under
-# $BASE_DIR: keep.d carries /etc/geoguard across sysupgrade, and a restored
-# pid would make kill -0 misfire exit 0 forever).
-LOCKDIR="/var/lock/geoguard-update.lockdir"
+# H2: single-flight (cron vs manual clicks). One flock file shared with
+# geoguard-fetch; the kernel frees it on process death (no pid reclaim).
+# A nested fetch inherits fd 9 and passes -n, so no bypass flag is needed.
+LOCKFILE="/var/lock/geoguard.lock"
 mkdir -p /var/lock 2>/dev/null
-if ! mkdir "$LOCKDIR" 2>/dev/null; then
-  LPID=$(cat "$LOCKDIR/pid" 2>/dev/null)
-  if [ -n "$LPID" ] && kill -0 "$LPID" 2>/dev/null; then
-    logger -t geoguard "update skipped: another run in progress (pid $LPID)"
-    exit 0
-  fi
-  rm -rf "$LOCKDIR"
-  mkdir "$LOCKDIR" 2>/dev/null || { logger -t geoguard "update skipped: lock contention"; exit 0; }
-fi
-echo "$$" > "$LOCKDIR/pid"
-trap 'rm -rf "$TEMP_DIR" "$LOCKDIR"' EXIT
+exec 9>"$LOCKFILE" 2>/dev/null \
+  || { logger -t geoguard "update skipped: lock open failed"; exit 0; }
+flock -n 9 2>/dev/null \
+  || { logger -t geoguard "update skipped: another run in progress"; exit 0; }
 
 hist() {
   echo "$(date '+%F %T')|update|$SETNAME|countries=$1 $2" >> "$BASE_DIR/history.log"
@@ -53,8 +45,8 @@ cc_en() {
   echo "$en"
 }
 
-# fetch runs under this lock (env flag tells it to skip its own acquisition).
-GEOGUARD_LOCKED=1 /usr/bin/geoguard-fetch
+# fetch runs under this lock (fd 9 inherited, its own flock -n passes).
+/usr/bin/geoguard-fetch
 
 # Append per-country fetch results to history
 if [ -f "$BASE_DIR/.fetch-results" ]; then

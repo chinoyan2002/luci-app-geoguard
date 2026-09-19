@@ -17,26 +17,15 @@ SELECTED="$SELECTED $(uci -q get geoguard.main.selected 2>/dev/null)"
 
 mkdir -p "$BASE_DIR" "$TEMP_DIR"
 trap 'rm -rf "$TEMP_DIR"' EXIT
-# Single-flight with geoguard-update: shared lockdir on tmpfs (NOT under
-# $BASE_DIR: keep.d carries /etc/geoguard across sysupgrade, and a restored
-# pid would make kill -0 misfire exit 0 forever).
-# Skipped when invoked by geoguard-update itself (GEOGUARD_LOCKED=1 exported
-# by the caller, which already holds the lock).
-LOCKDIR="/var/lock/geoguard-update.lockdir"
+# Single-flight with geoguard-update: one flock file shared by both.
+# Kernel releases the lock on process death, so no stale-lock reclaim
+# dance; a nested fetch (child of update) inherits fd 9 and passes -n.
+LOCKFILE="/var/lock/geoguard.lock"
 mkdir -p /var/lock 2>/dev/null
-if [ -z "$GEOGUARD_LOCKED" ]; then
-  if ! mkdir "$LOCKDIR" 2>/dev/null; then
-    LPID=$(cat "$LOCKDIR/pid" 2>/dev/null)
-    if [ -n "$LPID" ] && kill -0 "$LPID" 2>/dev/null; then
-      logger -t geoguard "fetch skipped: another run in progress (pid $LPID)"
-      exit 0
-    fi
-    rm -rf "$LOCKDIR"
-    mkdir "$LOCKDIR" 2>/dev/null || { logger -t geoguard "fetch skipped: lock contention"; exit 0; }
-  fi
-  echo "$$" > "$LOCKDIR/pid"
-  trap 'rm -rf "$TEMP_DIR" "$LOCKDIR"' EXIT
-fi
+exec 9>"$LOCKFILE" 2>/dev/null \
+  || { logger -t geoguard "fetch skipped: lock open failed"; exit 0; }
+flock -n 9 2>/dev/null \
+  || { logger -t geoguard "fetch skipped: another run in progress"; exit 0; }
 # One-time state move from the pre-2.2.1 shared dir. Needed because some
 # install paths (e.g. apk file-install) never run uci-defaults on upgrade;
 # harmless no-op once moved (43 covers the postinst path).

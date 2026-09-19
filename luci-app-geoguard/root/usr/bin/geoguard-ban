@@ -34,6 +34,11 @@ num() { case "$1" in ''|*[!0-9]*) echo "$2" ;; *) echo "$1" ;; esac; }
 EN=$(g ban_enabled); [ -z "$EN" ] && EN=0
 [ "$EN" = "0" ] && exit 0
 
+# Exempt-set tracking: rebuild geoguard_exempt from the UCI exempt list +
+# ddns state (cmp-guarded inside: no fw4 reload when unchanged), so
+# exemption data trails reality by at most one loop interval.
+/usr/bin/geoguard-ban-guard >/dev/null 2>&1
+
 # Guard self-heal: WAN interface drift (any save path that misses regen is
 # repaired automatically, checked every 60 seconds)
 GWANT=$(g ban_wan_if)
@@ -56,34 +61,18 @@ FIND=$(num "$(g ban_findtime)" 5)
 BANH=$(num "$(g ban_bantime)" 2)
 WEB=$(g ban_web); [ -z "$WEB" ] && WEB=1
 SSHO=$(g ban_ssh); [ -z "$SSHO" ] && SSHO=1
-WHITE=$(g white_name); [ -z "$WHITE" ] && WHITE=CustomAllow
-WLFILE="/etc/geoguard/$WHITE.cidr"
-STATE="/etc/geoguard/ddns-allowlist.list"
+WHITE=$(g white_name)
+echo "$WHITE" | grep -qE '^[A-Za-z][A-Za-z0-9_-]*$' || WHITE="CustomAllow"
 
-# CIDR membership test (awk, stdin line by line: CIDR or bare IP)
-in_list() {
-  # $1=ip, stdin=list
-  awk -v ip="$1" '
-  function i2n(a, p, n) { n = split(a, p, "."); return p[1]*16777216+p[2]*65536+p[3]*256+p[4]; }
-  BEGIN { needle = i2n(ip); }
-  { line = $1;
-    if (line ~ /\//) { split(line, a, "/"); b = i2n(a[1]); m = a[2]+0;
-      if (m == 0) next;
-      if (int(needle / 2^(32-m)) == int(b / 2^(32-m))) { found = 1; exit; } }
-    else if (line == ip) { found = 1; exit; } }
-  END { exit (found ? 0 : 1); }'
-}
-
+# Exemption membership via nft sets (single source of truth, no parallel
+# matching logic): geoguard_exempt holds ban_exempt CIDRs + ddns IPs
+# (built by ban-guard); the whitelist live set is materialized by fw4
+# from its loadfile. Missing set (never built) simply never matches.
 in_exempt() {
-  EX=$(g ban_exempt)
-  [ -z "$EX" ] && return 1
-  # shellcheck disable=SC2086
-  printf '%s\n' $EX | in_list "$1"
+  nft get element inet fw4 geoguard_exempt "{ $1 }" >/dev/null 2>&1
 }
-
-in_ddns() {
-  [ -f "$STATE" ] || return 1
-  awk -v ip="$1" '$2 == ip { found = 1; exit; } END { exit (found ? 0 : 1); }' "$STATE"
+in_white() {
+  nft get element inet fw4 "$WHITE" "{ $1 }" >/dev/null 2>&1
 }
 
 # N-minute sliding window
@@ -125,8 +114,7 @@ ban_ip() {
   ip="$1"; tag="$2"
   case "$ip" in ""|0.0.0.0) return 0 ;; esac
   in_exempt "$ip" && return 0
-  [ -f "$WLFILE" ] && in_list "$ip" < "$WLFILE" && return 0
-  in_ddns "$ip" && return 0
+  in_white "$ip" && return 0
   if ! nft get element inet fw4 $SET "{ $ip }" >/dev/null 2>&1; then
     if nft add element inet fw4 $SET "{ $ip timeout ${BANH}h }"; then
       logger -t geoguard-ban "banned $ip for ${BANH}h ($tag brute force)"
