@@ -1108,7 +1108,7 @@ msgid "Enable this option to block IP addresses with too many failed logins"
 msgstr ""
 
 #: applications/luci-app-geoguard/htdocs/luci-static/resources/view/geoguard.js:637
-msgid "Disabling stops the guard service; active bans stay until expiry."
+msgid "Disabling stops the guard service and removes the guard chain and ban set; active bans are dropped."
 msgstr ""
 
 #: applications/luci-app-geoguard/htdocs/luci-static/resources/view/geoguard.js:725

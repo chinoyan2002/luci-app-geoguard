@@ -831,8 +831,8 @@ msgstr "重新載入紀錄"
 msgid "Enable this option to block IP addresses with too many failed logins"
 msgstr "啟用此選項來封鎖登入失敗次數過多的 IP 位址"
 
-msgid "Disabling stops the guard service; active bans stay until expiry."
-msgstr "關閉即停掉防護服務，已封鎖的不自動解封。"
+msgid "Disabling stops the guard service and removes the guard chain and ban set; active bans are dropped."
+msgstr "關閉即停掉防護服務並移除防護鏈與封鎖集合，已封鎖的立即失效。"
 
 msgid "Within (minutes)"
 msgstr "在幾（分鐘）內"

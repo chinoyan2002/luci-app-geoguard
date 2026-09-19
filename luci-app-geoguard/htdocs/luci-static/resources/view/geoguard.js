@@ -638,7 +638,7 @@ return view.extend({
 		o = s.taboption('ban', form.Flag, 'ban_enabled', _('Enable this option to block IP addresses with too many failed logins'));
 		o.default = '0';
 		o.rmempty = false;
-		o.description = _('Disabling stops the guard service; active bans stay until expiry.');
+		o.description = _('Disabling stops the guard service and removes the guard chain and ban set; active bans are dropped.');
 
 		var banState = { maxretry: '8', findtime: '5', bantime: '2', web: '1', ssh: '1', ddnsint: '3', banint: '60' };
 		var banClamp = function(v, lo, hi, def) {

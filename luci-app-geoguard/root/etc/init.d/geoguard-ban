@@ -5,6 +5,8 @@ START=99
 
 start_service() {
   [ "$(uci get geoguard.main.ban_enabled 2>/dev/null)" = "1" ] || return 0
+  # the guard file may still be the inert placeholder (enable outside the UI)
+  /usr/bin/geoguard-ban-guard >/dev/null 2>&1
   # M3: restore persisted bans surviving reboot (remaining time only)
   if [ -f /etc/geoguard/ban-persist.list ]; then
     now=$(date +%s)
