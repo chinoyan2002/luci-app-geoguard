@@ -14,12 +14,14 @@ TMP=/tmp/luci-guard.new
 EN=$(uci -q get geoguard.main.ban_enabled 2>/dev/null)
 [ -z "$EN" ] && EN=0
 if [ "$EN" != "1" ]; then
+  MODE=off
   cat > "$TMP" <<EOF
 # GeoGuard login guard (inert until enabled in the UI).
 # geoguard-ban-guard writes the live chain + set on first enable
 # and reloads fw4 only when the content changes.
 EOF
 else
+  MODE=live
   WANIF=$(uci -q get geoguard.main.ban_wan_if 2>/dev/null)
   if [ -z "$WANIF" ]; then
     # Auto-detect: walk firewall zones one by one (no grep context, it bleeds into neighbor zones)
@@ -83,6 +85,12 @@ if [ -f "$OUT" ] && cmp -s "$TMP" "$OUT"; then
 else
   mv -f "$TMP" "$OUT"
   /etc/init.d/firewall reload >/dev/null 2>&1
+  if [ "$MODE" = "off" ]; then
+    # placeholder defines no sets: drop orphans left by the live file
+    # (fw4 reload alone does not delete them)
+    nft delete set inet fw4 geoguard_ban 2>/dev/null
+    nft delete set inet fw4 geoguard_exempt 2>/dev/null
+  fi
   logger -t geoguard-ban-guard "guard regenerated${WANIF:+ full-block ($WANIF)}"
   echo "guard regenerated${WANIF:+ ($WANIF)}"
 fi
