@@ -86,8 +86,10 @@ else
   mv -f "$TMP" "$OUT"
   /etc/init.d/firewall reload >/dev/null 2>&1
   if [ "$MODE" = "off" ]; then
-    # placeholder defines no sets: drop orphans left by the live file
+    # Placeholder defines no objects, and fw4 reload does not drop chains
+    # that vanished from its includes: remove chain + sets explicitly.
     # (fw4 reload alone does not delete them)
+    nft delete chain inet fw4 luci_guard 2>/dev/null
     nft delete set inet fw4 geoguard_ban 2>/dev/null
     nft delete set inet fw4 geoguard_exempt 2>/dev/null
   fi
