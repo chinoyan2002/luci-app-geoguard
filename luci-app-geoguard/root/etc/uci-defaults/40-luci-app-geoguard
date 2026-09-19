@@ -3,7 +3,17 @@
 # upgrade with a user-saved config restores schedule + missing state.
 # Config values come from package default /etc/config/geoguard.
 mkdir -p /etc/geoguard 2>/dev/null
-if [ "$(uci -q get geoguard.main.ui_saved 2>/dev/null)" != "1" ]; then
+# Restore iff the box was ever configured: the ui_saved marker (new UI),
+# or any activation evidence predating it (old configs have no marker but
+# may carry schedule/guard/selections). True fresh installs (shipped
+# quiet defaults) stay inert. This also heals prerm stripping the schedule
+# on opkg upgrade: configured boxes reinstall it right here.
+CONFIGURED=""
+[ "$(uci -q get geoguard.main.ui_saved 2>/dev/null)" = "1" ] && CONFIGURED=1
+[ "$(uci -q get geoguard.main.auto_update 2>/dev/null)" = "1" ] && CONFIGURED=1
+[ "$(uci -q get geoguard.main.ban_enabled 2>/dev/null)" = "1" ] && CONFIGURED=1
+[ -n "$(uci -q get geoguard.main.selected 2>/dev/null)$(uci -q get geoguard.main.whitelist 2>/dev/null)$(uci -q get geoguard.main.ddns_allowlist 2>/dev/null)" ] && CONFIGURED=1
+if [ -z "$CONFIGURED" ]; then
   logger -t geoguard "installed, open LuCI GeoGuard, configure and press update-merge once"
   exit 0
 fi
