@@ -5,6 +5,19 @@
 # (firewall wan zone -> ubus -> default route)
 # Fixed output /etc/nftables.d/10-geoguard-guard.nft; fw4 reload only on change
 OUT=/etc/nftables.d/10-geoguard-guard.nft
+TMP=/tmp/luci-guard.new
+
+# Disabled: emit the inert placeholder (chain + set fully removed).
+# Enabled: detect WAN and emit the live guard below.
+EN=$(uci -q get geoguard.main.ban_enabled 2>/dev/null)
+[ -z "$EN" ] && EN=0
+if [ "$EN" != "1" ]; then
+  cat > "$TMP" <<EOF
+# GeoGuard login guard (inert until enabled in the UI).
+# geoguard-ban-guard writes the live chain + set on first enable
+# and reloads fw4 only when the content changes.
+EOF
+else
 
 WANIF=$(uci -q get geoguard.main.ban_wan_if 2>/dev/null)
 if [ -z "$WANIF" ]; then
@@ -22,7 +35,6 @@ fi
 
 # Interface names go verbatim into nft; reject anything outside [A-Za-z0-9._-]
 case "$WANIF" in ''|*[!A-Za-z0-9._-]*) WANIF="pppoe-wan" ;; esac
-TMP=/tmp/luci-guard.new
 cat > "$TMP" <<EOF
 set geoguard_ban {
 	type ipv4_addr
@@ -35,13 +47,14 @@ chain luci_guard {
 	iifname "$WANIF" ip saddr @geoguard_ban drop
 }
 EOF
+fi
 
 if [ -f "$OUT" ] && cmp -s "$TMP" "$OUT"; then
   rm -f "$TMP"
-  echo "guard unchanged ($WANIF)"
+  echo "guard unchanged${WANIF:+ ($WANIF)}"
 else
   mv -f "$TMP" "$OUT"
   /etc/init.d/firewall reload >/dev/null 2>&1
-  logger -t geoguard-ban-guard "guard regenerated full-block ($WANIF)"
-  echo "guard regenerated ($WANIF)"
+  logger -t geoguard-ban-guard "guard regenerated${WANIF:+ full-block ($WANIF)}"
+  echo "guard regenerated${WANIF:+ ($WANIF)}"
 fi

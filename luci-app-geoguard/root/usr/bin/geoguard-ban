@@ -31,7 +31,7 @@ nft list set inet fw4 $SET >/dev/null 2>&1 || exit 0
 g() { uci get $CFG.main."$1" 2>/dev/null; }
 num() { case "$1" in ''|*[!0-9]*) echo "$2" ;; *) echo "$1" ;; esac; }
 
-EN=$(g ban_enabled); [ -z "$EN" ] && EN=1
+EN=$(g ban_enabled); [ -z "$EN" ] && EN=0
 [ "$EN" = "0" ] && exit 0
 
 # Guard self-heal: WAN interface drift (any save path that misses regen is
