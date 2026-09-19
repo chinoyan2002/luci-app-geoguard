@@ -22,16 +22,25 @@ if [ -s "$OLD_DIR/history.log" ] && [ -s "$NEW_DIR/history.log" ]; then
 fi
 # stale shipped copy from old packages (new packages ship it under NEW_DIR)
 rm -f "$OLD_DIR/cc-en.txt" 2>/dev/null
-# Repoint firewall ipset sections at moved country/merged files: without
-# this, fw4 reload fails on the dangling old-dir loadfiles and the ruleset
-# (including a disabled guard chain) is never rebuilt.
-REPOINTED=0
-for cf in "$NEW_DIR"/*.cidr; do
-  [ -e "$cf" ] || continue
-  _old="$OLD_DIR/${cf##*/}"
-  for sec in $(uci show firewall 2>/dev/null | grep -F "loadfile='$_old'" | cut -d= -f1); do
-    uci set "$sec"="$cf" 2>/dev/null && REPOINTED=1
-  done
+# Firewall follow-up: sections pointing at the old dir brick every fw4
+# reload (nft -f aborts atomically on a missing loadfile, yet fw4 still
+# exits 0), so no ruleset change ever lands again. For each stale section:
+# data moved -> repoint; data exists nowhere and unreferenced -> delete;
+# data exists nowhere but still referenced -> keep + loud error (same H1
+# policy as geoguard-update: never silently break a live rule).
+for sec in $(uci show firewall 2>/dev/null | grep -F "loadfile='$OLD_DIR/" | cut -d= -f1); do
+  _old=$(uci -q get "$sec" 2>/dev/null)
+  _new="$NEW_DIR/${_old##*/}"
+  if [ -s "$_new" ]; then
+    uci set "$sec" "$_new" 2>/dev/null && REPOINTED=1
+  elif [ -e "$_old" ]; then
+    : # still loadable where it is; leave working config alone
+  elif uci show firewall 2>/dev/null | grep -q "\.ipset='$(uci -q get "${sec%.loadfile}.name" 2>/dev/null)'$"; then
+    logger -t geoguard "ERROR stale set ${sec%.loadfile} still referenced by rules but data is gone (re-bind rules or run update-merge)"
+  else
+    uci delete "${sec%.loadfile}" 2>/dev/null && REPOINTED=1
+    logger -t geoguard "stale section removed: ${sec%.loadfile} (data gone with $OLD_DIR)"
+  fi
 done
 if [ "$REPOINTED" = "1" ]; then
   uci commit firewall 2>/dev/null
