@@ -670,13 +670,15 @@ const findInputs = (type) => NODES.filter((n) => n.tag === 'input' && n.attrs.ty
   // 12k. 後端靜態斷言（H1/H2/L5/M2/M5）
   const upd = fs.readFileSync(__dirname + '/../luci-app-geoguard/root/usr/bin/geoguard-update', 'utf8');
   const banSh = fs.readFileSync(__dirname + '/../luci-app-geoguard/root/usr/bin/geoguard-ban', 'utf8');
+  const grdSh = fs.readFileSync(__dirname + '/../luci-app-geoguard/root/usr/bin/geoguard-ban-guard', 'utf8');
   const cntSh = fs.readFileSync(__dirname + '/../luci-app-geoguard/root/usr/bin/geoguard-counts', 'utf8');
   const needs = [
     [upd, 'another run in progress', 'H2 flock'],
     [upd, 'still referenced by rules, kept', 'H1 留引用'],
     [upd, 'nft delete set inet fw4 "$gone"', 'L5 清殘留殼'],
     [upd, 'rule repoint', '改名 repoint'],
-    [banSh, 'if (m == 0) next;', 'M2 後端跳過 /0'],
+    [banSh, 'nft get element inet fw4 geoguard_exempt', 'M2 nft 豁免查詢'],
+    [grdSh, '/([1-9]|[12][0-9]|3[0-2])', 'M2 嚴格遮罩'],
     [cntSh, "A-B ranges have no '/'", 'M5 計數修正'],
   ];
   for (const [src, needle, label] of needs) {
