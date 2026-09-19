@@ -19,13 +19,18 @@ mkdir -p "$BASE_DIR" "$TEMP_DIR"
 trap 'rm -rf "$TEMP_DIR"' EXIT
 # Single-flight with geoguard-update: one flock file shared by both.
 # Kernel releases the lock on process death, so no stale-lock reclaim
-# dance; a nested fetch (child of update) inherits fd 9 and passes -n.
+# dance. Skipped when invoked by geoguard-update itself (GEOGUARD_LOCKED=1
+# exported by the caller, which already holds the lock: flock locks attach
+# to the open file description, so the child re-opening the file would
+# contend with its own parent without this bypass).
 LOCKFILE="/var/lock/geoguard.lock"
 mkdir -p /var/lock 2>/dev/null
-exec 9>"$LOCKFILE" 2>/dev/null \
-  || { logger -t geoguard "fetch skipped: lock open failed"; exit 0; }
-flock -n 9 2>/dev/null \
-  || { logger -t geoguard "fetch skipped: another run in progress"; exit 0; }
+if [ -z "$GEOGUARD_LOCKED" ]; then
+  exec 9>"$LOCKFILE" 2>/dev/null \
+    || { logger -t geoguard "fetch skipped: lock open failed"; exit 0; }
+  flock -n 9 2>/dev/null \
+    || { logger -t geoguard "fetch skipped: another run in progress"; exit 0; }
+fi
 # One-time state move from the pre-2.2.1 shared dir. Needed because some
 # install paths (e.g. apk file-install) never run uci-defaults on upgrade;
 # harmless no-op once moved (43 covers the postinst path).

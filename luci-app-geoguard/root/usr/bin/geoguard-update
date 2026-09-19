@@ -24,7 +24,6 @@ mkdir -p "$BASE_DIR" "$TEMP_DIR"
 trap 'rm -rf "$TEMP_DIR"' EXIT
 # H2: single-flight (cron vs manual clicks). One flock file shared with
 # geoguard-fetch; the kernel frees it on process death (no pid reclaim).
-# A nested fetch inherits fd 9 and passes -n, so no bypass flag is needed.
 LOCKFILE="/var/lock/geoguard.lock"
 mkdir -p /var/lock 2>/dev/null
 exec 9>"$LOCKFILE" 2>/dev/null \
@@ -45,8 +44,10 @@ cc_en() {
   echo "$en"
 }
 
-# fetch runs under this lock (fd 9 inherited, its own flock -n passes).
-/usr/bin/geoguard-fetch
+# fetch runs under this lock (env flag tells it to skip its own acquisition:
+# flock locks attach to the open file description, so a re-open in the
+# child would contend with the parent holding it).
+GEOGUARD_LOCKED=1 /usr/bin/geoguard-fetch
 
 # Append per-country fetch results to history
 if [ -f "$BASE_DIR/.fetch-results" ]; then
